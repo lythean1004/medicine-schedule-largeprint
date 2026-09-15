@@ -357,6 +357,7 @@
         await applyRotation();
         cropHost.classList.add("hidden");
         toastShow("방향을 맞췄어요");
+        await parseAfterCrop();
       });
 
       btnCropReset.addEventListener("click", async () => {
@@ -377,6 +378,7 @@
         try {
           await readFileAsBlob(fileInput);
           btnRetake.classList.remove("hidden");
+          await openCropView();
           showOnly("upload");
           toastShow("사진을 올렸어요");
         } catch (e) {
@@ -439,6 +441,40 @@
         }
       });
 
+      async function parseAfterCrop() {
+        const imgBlob = rotatedBlob || fileBlob;
+        if (!imgBlob) {
+          toastShow("사진이 없어요");
+          return;
+        }
+        btnParse.disabled = true;
+        parseStatus.textContent = "글자를 읽고 있어요…";
+        try {
+          const form = new FormData();
+          form.append("file", imgBlob, "photo.jpg");
+          const res = await fetch("/api/parse", {
+            method: "POST",
+            body: form
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            parseStatus.textContent = "글자 읽기 실패: " + (data.error || res.statusText);
+            return;
+          }
+          ocrText = data.text || "";
+          medDraft = data.meds || [];
+          buildConfirmView();
+          showOnly("confirm");
+          parseStatus.textContent = "글자 읽기 완료";
+          toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
+        } catch (e) {
+          parseStatus.textContent = "네트워크 오류가 났어요";
+          toastShow("다시 시도해 주세요");
+        } finally {
+          btnParse.disabled = false;
+        }
+      }
+
       function buildConfirmView() {
         confirmList.innerHTML = "";
         const list = medDraft.length ? medDraft : [];
@@ -452,20 +488,10 @@
           item.className = "confirm-item";
           item.dataset.name = m.name;
 
-          const ck = document.createElement("div");
-          ck.className = "ck";
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.id = "ck-" + escapedId(m.name);
-          const lbl = document.createElement("label");
-          lbl.htmlFor = cb.id;
-          lbl.textContent = "확인 완료";
-          ck.appendChild(cb);
-          ck.appendChild(lbl);
-
           const body = document.createElement("div");
           body.className = "fields";
 
+          // 시간대 체크 (아침/점심/저녁/자기 전)
           const timeGroup = document.createElement("div");
           timeGroup.style.marginTop = "6px";
           const slots = ["아침", "점심", "저녁", "자기 전"];
@@ -484,6 +510,7 @@
           });
           body.appendChild(timeGroup);
 
+          // 몇 알 / 언제 / 며칠분 / 메모(입력 칸)
           const row = document.createElement("div");
           row.style.marginTop = "8px";
           row.innerHTML =
@@ -531,7 +558,21 @@
           body.appendChild(row3);
           body.appendChild(row4);
 
-          item.appendChild(ck);
+          // 보호자 확인 완료 체크박스 (약 박스 가장 아래)
+          const ckBottom = document.createElement("div");
+          ckBottom.style.marginTop = "10px";
+          ckBottom.style.paddingTop = "8px";
+          ckBottom.style.borderTop = "1px solid var(--line)";
+          const cbBottom = document.createElement("input");
+          cbBottom.type = "checkbox";
+          cbBottom.id = "ck-bottom-" + escapedId(m.name);
+          const lblBottom = document.createElement("label");
+          lblBottom.htmlFor = cbBottom.id;
+          lblBottom.textContent = "보호자 확인 완료";
+          ckBottom.appendChild(cbBottom);
+          ckBottom.appendChild(lblBottom);
+          body.appendChild(ckBottom);
+
           item.appendChild(body);
           confirmList.appendChild(item);
         });
@@ -545,12 +586,11 @@
 
       function markMissing() {
         confirmList.querySelectorAll(".confirm-item").forEach((item) => {
-          const checkboxes = item.querySelectorAll('input[type="checkbox"]');
+          const bottomCheckbox = item.querySelector('#ck-bottom-" + escapedId(item.dataset.name) + "');
+          const bottomChecked = bottomCheckbox ? bottomCheckbox.checked : false;
           const textInputs = item.querySelectorAll('input[type="text"]');
-          const checked = Array.from(checkboxes).some((c) => c.checked);
           const anyBlank = Array.from(textInputs).some((t) => !t.value.trim());
-          const hasAnyInput = checked || Array.from(textInputs).some((t) => t.value.trim());
-          if (!hasAnyInput) {
+          if (!bottomChecked || anyBlank) {
             item.classList.add("missing");
           } else {
             item.classList.remove("missing");
@@ -567,8 +607,8 @@
         let anyChecked = false;
         items.forEach((item) => {
           const name = item.dataset.name || "(이름 없음)";
-          const cb = item.querySelector('input[type="checkbox"]');
-          const checked = cb ? cb.checked : false;
+          const bottomCheckbox = item.querySelector('#ck-bottom-" + escapedId(name) + "');
+          const checked = bottomCheckbox ? bottomCheckbox.checked : false;
           anyChecked = anyChecked || checked;
 
           const timeValues = Array.from(
