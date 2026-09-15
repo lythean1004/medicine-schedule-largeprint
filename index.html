@@ -164,6 +164,38 @@
       word-break: break-all;
     }
 
+    .share-options {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .share-options .share-opt {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .share-options .share-opt:hover {
+      background: var(--soft);
+    }
+    .share-options .opt-icon {
+      font-size: 16px;
+    }
+    .share-options .tip {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #777;
+    }
+
     .toast {
       position: fixed;
       bottom: 20px;
@@ -326,13 +358,32 @@
             <button id="btn-save-png" type="button">카드 PNG 저장</button>
             <button id="btn-save-pdf" type="button">PDF 저장</button>
             <button id="btn-copy-html" type="button">카드 화면 복사</button>
-            <button id="btn-share-link" type="button">공유 링크 복사</button>
-            <button id="btn-mailto" type="button">메일 앱 열기(mailto:)</button>
-            <button id="btn-gmail" type="button">Gmail로 PNG 첨부 발송(연결 필요)</button>
+            <button id="btn-share" type="button" class="primary">공유하기</button>
             <button id="btn-ics" type="button">달력 ICS 저장</button>
           </div>
           <div id="result-meta" class="result-meta"></div>
           <div id="share-host" class="card-share hidden"></div>
+          <!-- 공유 선택지 패널 -->
+          <div id="share-options" class="share-options hidden">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="share-opt" data-opt="mailto">
+                <span class="opt-icon">✉️</span> 메일 앱 열기
+              </button>
+              <button type="button" class="share-opt" data-opt="gmail">
+                <span class="opt-icon">📧</span> Gmail로 PNG 첨부 발송
+              </button>
+              <button type="button" class="share-opt" data-opt="link">
+                <span class="opt-icon">🔗</span> 공유 링크 복사
+              </button>
+              <button type="button" class="share-opt" data-opt="png">
+                <span class="opt-icon">🖼️</span> PNG 다운로드
+              </button>
+            </div>
+            <div style="margin-top:8px; font-size:12px; color:#777;">
+              카카오톡은 별도 파일 전송이 어려워, PNG 다운로드 후 카톡에서 공유하거나 공유 링크 복사로 보내세요.
+            </div>
+          </div>
+        </div
         </div>
       </div>
     </section>
@@ -1041,31 +1092,59 @@
         }
       });
 
-      // 메일 앱 열기 (mailto:)
-      const btnMailto = $("#btn-mailto");
-      const mailRecipient = $("#mail-recipient");
-      const MAIL_SUBJECT = "약봉투 크게해서 보내드려요~";
-      const MAIL_BODY = "오늘 먹을 약 큰 글씨 카드예요. 첨부 파일을 확인해 주세요.";
+      // 공유하기 버튼 + 선택지 패널
+      const btnShare = $("#btn-share");
+      const shareOptionsEl = $("#share-options");
+      const SHARE_SUBJECT = "약봉투 크게해서 보내드려요~";
+      const SHARE_BODY = "오늘 먹을 약 큰 글씨 카드예요. 첨부 파일을 확인해 주세요.";
 
-      btnMailto.addEventListener("click", () => {
+      btnShare.addEventListener("click", () => {
+        if (!confirmed.length) {
+          toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
+          return;
+        }
+        shareOptionsEl.classList.toggle("hidden");
+      });
+
+      shareOptionsEl.addEventListener("click", (e) => {
+        const opt = e.target.closest(".share-opt");
+        if (!opt) return;
+        const action = opt.dataset.opt;
+        shareOptionsEl.classList.add("hidden");
+        handleShareAction(action);
+      });
+
+      function handleShareAction(action) {
+        switch (action) {
+          case "mailto":
+            doMailto();
+            break;
+          case "gmail":
+            doGmail();
+            break;
+          case "link":
+            doShareLink();
+            break;
+          case "png":
+            doPngDownload();
+            break;
+          default:
+            toastShow("선택할 수 없는 공유 방식이에요.");
+        }
+      }
+
+      function doMailto() {
         const recipient = mailRecipient.value.trim();
         const params = [];
         if (recipient) params.push("to=" + encodeURIComponent(recipient));
-        params.push("subject=" + encodeURIComponent(MAIL_SUBJECT));
-        params.push("body=" + encodeURIComponent(MAIL_BODY));
+        params.push("subject=" + encodeURIComponent(SHARE_SUBJECT));
+        params.push("body=" + encodeURIComponent(SHARE_BODY));
         const mailto = "mailto:?" + params.join("&");
         window.location.href = mailto;
-      });
+      }
 
-      // Gmail PNG 첨부 발송 (Composio Gmail 연결 필요)
-      const btnGmail = $("#btn-gmail");
-      btnGmail.addEventListener("click", async () => {
+      async function doGmail() {
         try {
-          if (!confirmed.length) {
-            toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
-            return;
-          }
-          // 결과 카드 PNG 생성
           const cardEl = document.querySelector("#result-card");
           if (!cardEl) { toastShow("카드 화면이 없어요"); return; }
           if (typeof html2canvas === "undefined") {
@@ -1086,14 +1165,13 @@
           if (!blob) { toastShow("PNG 생성에 실패했어요"); return; }
 
           const recipient = mailRecipient.value.trim();
-          // composio_execute로 Gmail 전송 시도 (연결 필요)
           try {
             const result = await composio_execute({
               tool: "GMAIL_SEND_EMAIL",
               args: {
                 to: recipient || "",
-                subject: MAIL_SUBJECT,
-                body: MAIL_BODY,
+                subject: SHARE_SUBJECT,
+                body: SHARE_BODY,
                 attachments: [{
                   content: await blob.text(),
                   filename: "약먹는시간표_카드.png",
@@ -1103,21 +1181,70 @@
             });
             toastShow("Gmail로 발송 완료");
           } catch (composeErr) {
-            // Gmail 미연결 또는 전송 실패
             const msg = composeErr && composeErr.message ? composeErr.message : "Gmail 연결이 필요합니다";
             toastShow("Gmail 발송 실패: " + msg + " (커넥터 탭에서 Gmail을 연결해 주세요)");
-            // 대안: mailto:로 안내
-            const mailto = recipient
-              ? `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(MAIL_BODY)}`
-              : `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(MAIL_BODY)}`;
-            window.location.href = mailto;
+            doMailto();
           }
         } catch (e) {
           toastShow("Gmail 발송 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
-      });
+      }
 
-      btnIcs.addEventListener("click", async () => {
+      function doShareLink() {
+        fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmed: confirmed })
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const link = data.url || "";
+            if (link) {
+              shareHost.classList.remove("hidden");
+              shareHost.textContent = "공유 링크: " + link;
+              navigator.clipboard.writeText(link).then(
+                () => toastShow("공유 링크를 복사했어요"),
+                () => toastShow("공유 링크가 생성됐어요. 원하는 곳에 붙여넣어 주세요.")
+              );
+            } else {
+              toastShow("공유 링크를 만들 수 없었어요");
+            }
+          })
+          .catch(() => toastShow("공유 링크 만들기 중 오류가 났어요"));
+      }
+
+      function doPngDownload() {
+        const cardEl = document.querySelector("#result-card");
+        if (!cardEl) { toastShow("카드 화면이 없어요"); return; }
+        if (typeof html2canvas === "undefined") {
+          toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
+          return;
+        }
+        html2canvas(cardEl, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          windowWidth: cardEl.scrollWidth,
+          windowHeight: cardEl.scrollHeight,
+          logging: false
+        }).then((canvas) => {
+          const blob = new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+          blob.then((b) => {
+            if (!b) { toastShow("PNG 생성에 실패했어요"); return; }
+            const url = URL.createObjectURL(b);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "약먹는시간표_카드.png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            toastShow("PNG 다운로드 완료");
+          });
+        }).catch(() => toastShow("PNG 다운로드 중 오류가 났어요"));
+      }
+
+      // 메일 앱 열기 (mailto:) — 별도 버튼 제거 후 선택지 전용
         try {
           if (!confirmed.length) {
             toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
