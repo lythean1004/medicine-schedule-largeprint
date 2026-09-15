@@ -106,6 +106,15 @@
       margin-top: 8px;
       background: #fff;
     }
+    .confirm-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .confirm-item .ck {
       display: inline-flex;
       align-items: center;
@@ -174,8 +183,8 @@
     /* 2열 레이아웃: 사진(왼쪽 고정) + 선택/결과(오른쪽) */
     .two-col {
       display: grid;
-      grid-template-columns: minmax(320px, 400px) 1fr;
-      gap: 16px;
+      grid-template-columns: minmax(280px, 45vw) 1fr;
+      gap: 12px;
       align-items: start;
     }
     .photo-panel {
@@ -185,6 +194,7 @@
       background: #fff;
       min-height: 260px;
       overflow: hidden;
+      position: relative;
     }
     .photo-panel img {
       width: 100%;
@@ -193,10 +203,11 @@
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #f5f5f5;
-      max-height: 760px;
+      max-width: none;
+      max-height: none;
       object-fit: contain;
-      transform: scale(1.5);
-      transform-origin: center top;
+      transform: none;
+      display: block;
     }
     .photo-panel .photo-cap {
       font-size: 13px;
@@ -205,21 +216,8 @@
     }
     .choice-panel {
       min-width: 0;
-      max-height: 62vh;
       overflow-y: auto;
       padding-bottom: 10px;
-    }
-    #confirm-area .choice-panel {
-      display: flex;
-      flex-direction: column;
-    }
-    #confirm-area .actions {
-      margin-top: auto;
-    }
-    @media (max-width: 560px) {
-      .two-col { grid-template-columns: 1fr; }
-      .photo-panel { max-width: 340px; }
-      .choice-panel { max-height: none; overflow-y: visible; }
     }
 
     @media print {
@@ -604,19 +602,17 @@
           item.className = "confirm-item";
           item.dataset.name = m.name;
 
-          const ck = document.createElement("div");
-          ck.className = "ck";
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.id = "ck-" + escapedId(m.name);
-          const lbl = document.createElement("label");
-          lbl.htmlFor = cb.id;
-          lbl.textContent = "확인 완료";
-          ck.appendChild(cb);
-          ck.appendChild(lbl);
-
           const body = document.createElement("div");
           body.className = "fields";
+
+          // 약 이름 (큰 글씨, 상단 표시)
+          const nameRow = document.createElement("div");
+          nameRow.style.marginBottom = "10px";
+          const nameLabel = document.createElement("span");
+          nameLabel.className = "confirm-name";
+          nameLabel.textContent = m.name || "(약 이름 없음)";
+          nameRow.appendChild(nameLabel);
+          body.appendChild(nameRow);
 
           // 시간대 체크 (아침/점심/저녁/자기 전)
           const timeGroup = document.createElement("div");
@@ -684,8 +680,23 @@
           body.appendChild(row3);
           body.appendChild(row4);
 
-          item.appendChild(ck);
+          // 확인 완료 체크박스 (약별 하단 배치)
+          const ck = document.createElement("div");
+          ck.className = "ck";
+          ck.style.marginTop = "12px";
+          ck.style.paddingTop = "10px";
+          ck.style.borderTop = "1px solid var(--line)";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.id = "ck-" + escapedId(m.name);
+          const lbl = document.createElement("label");
+          lbl.htmlFor = cb.id;
+          lbl.textContent = "보호자 확인 완료";
+          ck.appendChild(cb);
+          ck.appendChild(lbl);
+
           item.appendChild(body);
+          item.appendChild(ck);
           confirmList.appendChild(item);
         });
 
