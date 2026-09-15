@@ -217,6 +217,20 @@
       <div id="share-host" class="card-share hidden"></div>
     </section>
 
+    <section class="step hidden" id="parse-error-detail">
+      <div class="card" style="border-color:var(--red); background:#fff5f5;">
+        <h2 style="color:var(--red);">글자 읽기 상세 오류 (개발 확인용)</h2>
+        <div id="parse-error-kind" style="font-size:16px; margin-top:8px;"></div>
+        <div id="parse-error-body" style="margin-top:8px; font-size:14px;"></div>
+        <div style="margin-top:12px; max-height:320px; overflow:auto;">
+          <pre id="parse-error-data" style="background:#fafafa; border:1px solid var(--line); padding:10px; font-size:12px;"></pre>
+        </div>
+        <div style="margin-top:10px;">
+          <button id="btn-error-close" type="button" style="font-size:14px;">닫기</button>
+        </div>
+      </div>
+    </section>
+
     <div id="start-empty" class="step">
       <p>정리할 약봉투 사진을 올려 주세요.</p>
     </div>
@@ -261,6 +275,12 @@
       const btnIcs = $("#btn-ics");
       const toast = $("#toast");
 
+      const parseErrorDetail = $("#parse-error-detail");
+      const parseErrorKind = $("#parse-error-kind");
+      const parseErrorBody = $("#parse-error-body");
+      const parseErrorData = $("#parse-error-data");
+      const btnErrorClose = $("#btn-error-close");
+
       function showOnly(shows) {
         const all = [
           "upload-area", "confirm-area", "result-area", "start-empty"
@@ -284,6 +304,39 @@
         toast.textContent = msg;
         toast.classList.add("show");
         setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+
+      function showParseError(data, context) {
+        if (!parseErrorDetail) return;
+        let kind = "알 수 없음";
+        let body = "";
+        if (context && context.httpStatus != null) {
+          kind = "HTTP 오류";
+          body = "상태 코드: " + context.httpStatus;
+          if (context.httpStatusText) body += " / " + context.httpStatusText;
+          if (context.serverError) body += "\n서버 message: " + context.serverError;
+        } else if (context && context.errorMessage) {
+          kind = "네트워크/예외";
+          body = context.errorMessage;
+        } else if (data && typeof data === "object" && data.error) {
+          kind = "서버 response error";
+          body = "서버 응답 error: " + data.error;
+        }
+        if (parseErrorKind) parseErrorKind.textContent = kind;
+        if (parseErrorBody) parseErrorBody.textContent = body;
+        if (parseErrorData) {
+          try {
+            parseErrorData.textContent = JSON.stringify(data, null, 2);
+          } catch (e) {
+            parseErrorData.textContent = String(data);
+          }
+        }
+        parseErrorDetail.classList.remove("hidden");
+        // 화면 흐름을 해치지 않도록 상단 상태도 함께 남겨 둔다
+        if (parseStatus) {
+          parseStatus.textContent = "글자 읽기에서 오류가 났어요. 아래 상세 내용을 확인해 주세요.";
+        }
+        toastShow("글자 읽기 오류. 아래 상세에서 전체 응답(data)을 확인해 주세요.");
       }
 
       function readFileAsDataURL(blob) {
@@ -424,7 +477,11 @@
           });
           const data = await res.json();
           if (!res.ok) {
-            parseStatus.textContent = "글자 읽기 실패: " + (data.error || res.statusText);
+            showParseError(data, {
+              httpStatus: res.status,
+              httpStatusText: res.statusText,
+              serverError: data && data.error
+            });
             return;
           }
           ocrText = data.text || "";
@@ -434,7 +491,9 @@
           parseStatus.textContent = "글자 읽기 완료";
           toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
         } catch (e) {
-          parseStatus.textContent = "네트워크 오류가 났어요";
+          showParseError(data || {}, {
+            errorMessage: "네트워크 오류가 났어요: " + (e && e.message ? e.message : String(e))
+          });
           toastShow("다시 시도해 주세요");
         } finally {
           btnParse.disabled = false;
@@ -458,7 +517,11 @@
           });
           const data = await res.json();
           if (!res.ok) {
-            parseStatus.textContent = "글자 읽기 실패: " + (data.error || res.statusText);
+            showParseError(data, {
+              httpStatus: res.status,
+              httpStatusText: res.statusText,
+              serverError: data && data.error
+            });
             return;
           }
           ocrText = data.text || "";
@@ -468,7 +531,9 @@
           parseStatus.textContent = "글자 읽기 완료";
           toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
         } catch (e) {
-          parseStatus.textContent = "네트워크 오류가 났어요";
+          showParseError(data || {}, {
+            errorMessage: "네트워크 오류가 났어요: " + (e && e.message ? e.message : String(e))
+          });
           toastShow("다시 시도해 주세요");
         } finally {
           btnParse.disabled = false;
@@ -851,6 +916,10 @@
         } catch (e) {
           toastShow("ICS 저장 중 오류가 났어요");
         }
+      });
+
+      btnErrorClose.addEventListener("click", () => {
+        if (parseErrorDetail) parseErrorDetail.classList.add("hidden");
       });
     })();
   </script>
