@@ -130,7 +130,12 @@ module.exports = async function handler(req, res) {
     } catch (e) {
       res.statusCode = 400;
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: "입력 오류" }));
+      // 디버깅용: 예외 타입과 메시지 일부를 안전하게 전달
+      let debugMsg = "입력 오류";
+      if (e && typeof e === "object" && e.message) {
+        debugMsg = e.message.substring(0, 200);
+      }
+      res.end(JSON.stringify({ error: debugMsg }));
     }
   });
 };
