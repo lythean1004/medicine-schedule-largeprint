@@ -1133,6 +1133,10 @@
               카카오톡은 별도 파일 전송이 어려워, PNG 다운로드 후 카톡에서 공유하거나 공유 링크 복사로 보내세요.
             </div>
           </div>
+
+          <div style="margin-top:18px; border-top:1px solid var(--line); padding-top:14px;">
+            <button id="btn-retake-from-result" type="button" class="danger">다시 사진 찍기 (첫 화면으로)</button>
+          </div>
         </div>
       </div>
     </section>
@@ -1210,6 +1214,7 @@
       const btnCopyHtml = $("#btn-copy-html");
       const btnShareLink = $("#btn-share-link");
       const btnIcs = $("#btn-ics");
+      const btnRetakeFromResult = $("#btn-retake-from-result");
       const toast = $("#toast");
 
       // parse-error-detail refs
@@ -1394,6 +1399,18 @@
       btnRetake.addEventListener("click", () => { updateFileDisplay(); });
 
       btnReset.addEventListener("click", () => {
+        fileBlob = null;
+        rotatedBlob = null;
+        ocrText = "";
+        medDraft = [];
+        confirmed = [];
+        confirmArea.classList.add("hidden");
+        resultArea.classList.add("hidden");
+        shareHost.classList.add("hidden");
+        showOnly("start");
+      });
+
+      btnRetakeFromResult.addEventListener("click", () => {
         fileBlob = null;
         rotatedBlob = null;
         ocrText = "";
@@ -1656,12 +1673,13 @@
       btnConfirm.addEventListener("click", () => {
         const items = confirmList.querySelectorAll(".confirm-item");
         const next = [];
-        let anyChecked = false;
+        let checkedCount = 0;
+
         items.forEach((item) => {
           const name = item.dataset.name || "(이름 없음)";
-          const cb = item.querySelector('input[type="checkbox"]');
+          const cb = item.querySelector('input[data-field="confirmed"]');
           const checked = cb ? cb.checked : false;
-          anyChecked = anyChecked || checked;
+          if (checked) checkedCount++;
 
           const timeValues = Array.from(
             item.querySelectorAll('input[name^="time-"]:checked')
@@ -1683,9 +1701,16 @@
           });
         });
 
-        if (!anyChecked) {
-          confirmStatus.textContent = "확인 완료 체크를 하나 이상 눌러 주세요.";
-          toastShow("확인 체크를 눌러 주세요");
+        const totalItems = items.length;
+        if (totalItems === 0) {
+          confirmStatus.textContent = "확인할 약이 없어요.";
+          toastShow("확인할 약이 없어요");
+          return;
+        }
+
+        if (checkedCount < totalItems) {
+          confirmStatus.textContent = "아직 모두 확인되지 않았어요. 각 약의 보호자 확인 완료를 모두 눌러 주세요.";
+          toastShow("모든 약의 보호자 확인 완료를 눌러 주세요");
           return;
         }
 
@@ -2271,6 +2296,66 @@
         }
       }
 
+      // ICS 생성(클라이언트 전용): 서버가 없어도 브라우저에서 바로 .ics 다운로드
+      function buildIcsText(confirmedList) {
+        const lines = [];
+        lines.push("BEGIN:VCALENDAR");
+        lines.push("VERSION:2.0");
+        lines.push("PRODID:-//약먹는시간표//KO");
+        lines.push("CALSCALE:GREGORIAN");
+        lines.push("METHOD:PUBLISH");
+        lines.push("X-WR-CALNAME:약 먹는 시간표");
+
+        const today = new Date();
+        // 달력에서 보기 쉽게 오늘 기준으로 이벤트 생성
+        function formatUtc(d) {
+          const pad = (n) => String(n).padStart(2, "0");
+          const y = d.getUTCFullYear();
+          const m = pad(d.getUTCMonth() + 1);
+          const day = pad(d.getUTCDate());
+          const hh = pad(d.getUTCHours());
+          const mm = pad(d.getUTCMinutes());
+          const ss = pad(d.getUTCSeconds());
+          return y + "" + m + "" + day + "T" + hh + mm + ss + "Z";
+        }
+
+        confirmedList.forEach((r, idx) => {
+          const times = r.timeslots || [];
+          if (!times.length) return;
+          times.forEach((t) => {
+            const start = new Date(today);
+            // 시간대별로 시작 시각을 대강 배치(할머니/어르신용 보기 기준)
+            if (t === "아침") start.setHours(8, 0, 0, 0);
+            else if (t === "점심") start.setHours(12, 0, 0, 0);
+            else if (t === "저녁") start.setHours(18, 0, 0, 0);
+            else if (t === "자기 전") start.setHours(21, 0, 0, 0);
+            else start.setHours(9, 0, 0, 0);
+
+            const end = new Date(start.getTime() + 30 * 60 * 1000);
+
+            const subject = (r.name || "약") + " 복용";
+            const descParts = [];
+            if (r.dose) descParts.push(r.dose + "알");
+            if (r.when) descParts.push(r.when);
+            if (r.days) descParts.push("며칠분: " + r.days);
+            if (r.note) descParts.push("확인 메모: " + r.note);
+            const desc = descParts.length ? descParts.join(" / ") : "";
+
+            lines.push("BEGIN:VEVENT");
+            lines.push("UID:med-" + (idx + 1) + "-" + encodeURIComponent(t) + "@medschedule");
+            lines.push("DTSTAMP:" + formatUtc(new Date()));
+            lines.push("DTSTART:" + formatUtc(start));
+            lines.push("DTEND:" + formatUtc(end));
+            lines.push("SUMMARY:" + subject);
+            if (desc) lines.push("DESCRIPTION:" + desc);
+            lines.push("END:VEVENT");
+          });
+        });
+
+        lines.push("END:VCALENDAR");
+        return lines.join("\r\n");
+      }
+
       btnIcs.addEventListener("click", async () => {
         try {
           if (!confirmed.length) {
@@ -2278,36 +2363,12 @@
             return;
           }
 
-          const body = {
-            confirmed: confirmed,
-            title: "오늘 먹을 약 (큰 글씨)"
-          };
-          console.log("[ICS 디버깅] confirmed 길이:", confirmed.length);
-          console.log("[ICS 디버깅] confirmed[0]:", confirmed.length ? JSON.stringify(confirmed[0]) : "없음");
-          console.log("[ICS 디버깅] 보내는 JSON:", JSON.stringify(body).substring(0, 300));
-
-          const res = await fetch("/api/ics", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-          });
-          if (!res.ok) {
-            let errInfo = res.statusText;
-            try {
-              const errJson = await res.json();
-              errInfo = errJson.error != null ? String(errJson.error) : JSON.stringify(errJson);
-            } catch (e2) {
-              const errText = await res.text().catch(() => "");
-              errInfo = errText || res.statusText;
-            }
-            toastShow("ICS 생성 실패: " + errInfo);
-            return;
-          }
-          const icsText = await res.text();
+          const icsText = buildIcsText(confirmed);
           if (!icsText || !icsText.includes("BEGIN:VCALENDAR")) {
-            toastShow("ICS 내용이 올바르지 않아요");
+            toastShow("ICS 내용을 만들 수 없었어요");
             return;
           }
+
           const blob = new Blob([icsText], { type: "text/calendar;charset=utf-8" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
