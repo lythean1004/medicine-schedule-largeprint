@@ -1964,6 +1964,43 @@
         }
       });
 
+      async function downloadFullResultPng() {
+        try {
+          if (typeof html2canvas === "undefined") {
+            toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
+            return;
+          }
+          const container = renderScopedCards("all");
+          const canvas = await html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false
+          });
+          if (container && container.parentNode) {
+            container.parentNode.removeChild(container);
+          }
+          const blob = await new Promise((resolve) => {
+            canvas.toBlob((b) => resolve(b), "image/png");
+          });
+          if (!blob) {
+            toastShow("PNG 변환에 실패했어요");
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "약먹는시간표_전체.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+          toastShow("카드 전체 PNG 다운로드 완료");
+        } catch (e) {
+          toastShow("PNG 다운로드 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
+        }
+      }
+
       btnSavePdf.addEventListener("click", async () => {
         try {
           if (!confirmed.length) {
@@ -2150,7 +2187,7 @@
           toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
           return;
         }
-        shareOptionsEl.classList.toggle("hidden");
+        downloadFullResultPng();
       });
 
       shareOptionsEl.addEventListener("click", (e) => {
@@ -2367,6 +2404,7 @@
             return;
           }
 
+          toastShow("ICS 파일을 만들고 있어요");
           const icsText = buildIcsText(confirmed);
           if (!icsText || !icsText.includes("BEGIN:VCALENDAR")) {
             toastShow("ICS 내용을 만들 수 없었어요");
@@ -2382,7 +2420,8 @@
           a.click();
           document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 1500);
-          toastShow("ICS 달력 파일 저장 완료");
+          toastShow("ICS 파일 다운로드 시작 — 기기에 저장돼요");
+          setTimeout(() => toastShow("ICS 달력 파일 저장 완료"), 400);
         } catch (e) {
           toastShow("ICS 저장 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
@@ -2463,6 +2502,7 @@
         confirmPhotoEl.addEventListener("click", () => {
           const blob = rotatedBlob || fileBlob;
           if (blob) openPhotoModal(blob);
+          else toastShow("확대할 사진이 없어요");
         });
       }
 
@@ -2471,6 +2511,7 @@
         confirmPanel.addEventListener("click", () => {
           const blob = rotatedBlob || fileBlob;
           if (blob) openPhotoModal(blob);
+          else toastShow("확대할 사진이 없어요");
         });
       }
 
