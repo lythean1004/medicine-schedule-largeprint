@@ -1,59 +1,21 @@
 "use strict";
 
-function escapeHtml(s) {
+function escapeText(s) {
+  if (s == null) return "";
   return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function buildIcs(confirmed, title, startDate, daysCount) {
-  const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const uid = "med-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-
-  const slotTimes = {
-    아침: "0800",
-    점심: "1300",
-    저녁: "1900",
-    "자기 전": "2200"
-  };
-
-  let ics = "";
-  ics += "BEGIN:VCALENDAR\r\n";
-  ics += "VERSION:2.0\r\n";
-  ics += "PRODID:-//medicine-schedule-largeprint//KO\r\n";
-  ics += "CALSCALE:GREGORIAN\r\n";
-  ics += "METHOD:PUBLISH\r\n";
-  ics += "BEGIN:VEVENT\r\n";
-  ics += "UID:" + uid + "\r\n";
-  ics += "DTSTAMP:" + now + "\r\n";
-  ics += "DTSTART;VALUE=DATE:" + isoDateOnly(startDate) + "\r\n";
-  ics += "DTEND;VALUE=DATE:" + isoDateOnly(addDays(startDate, daysCount)) + "\r\n";
-  ics += "SUMMARY:" + escapeHtml(title) + "\r\n";
-  ics += "DESCRIPTION:" + escapeHtml(
-    confirmed.map((r) => {
-      const times = r.timeslots || [];
-      return times.map((t) => {
-        const time = slotTimes[t] || "0800";
-        return t + " " + time + " " + r.name + (r.dose ? " " + r.dose + "알" : "");
-      }).join("\\n");
-    }).join("\\n") ||
-    "보호자가 확인한 약 목록"
-  ) + "\r\n";
-  ics += "BEGIN:VALARM\r\n";
-  ics += "ACTION:DISPLAY\r\n";
-  ics += "DESCRIPTION:약 먹을 시간이에요\r\n";
-  ics += "TRIGGER:-PT30M\r\n";
-  ics += "END:VALARM\r\n";
-  ics += "END:VEVENT\r\n";
-  ics += "END:VCALENDAR\r\n";
-  return ics;
+    .replace(/&/g, "&")
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "")
+    .replace(/"/g, '\\"')
+    .replace(/'/g, "\\'");
 }
 
 function isoDateOnly(date) {
   const d = new Date(date);
+  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -62,6 +24,7 @@ function isoDateOnly(date) {
 
 function addDays(date, days) {
   const d = new Date(date);
+  if (isNaN(d.getTime())) return d;
   d.setDate(d.getDate() + days);
   return d;
 }
@@ -79,12 +42,86 @@ module.exports = async function handler(req, res) {
   req.on("end", () => {
     try {
       const json = JSON.parse(Buffer.concat(body).toString("utf8"));
-      const confirmed = json.confirmed || [];
+      const confirmed = Array.isArray(json.confirmed) ? json.confirmed : [];
       const title = json.title || "오늘 먹을 약 (큰 글씨)";
-      const startDate = json.startDate || new Date().toISOString();
-      const daysCount = json.daysCount || 30;
 
-      const ics = buildIcs(confirmed, title, startDate, daysCount);
+      // 기준일자: 오늘 (사용자 요청)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startDate = isoDateOnly(today);
+
+      // 각 약별 days 수집 (사용자 요청: 각 약별로 며칠분 정보)
+      const daysByMed = new Map();
+      confirmed.forEach((r) => {
+        if (r.days) {
+          const key = r.name || "이름없음";
+          daysByMed.set(key, r.days);
+        }
+      });
+
+      // 대표 days: 약들의 days 중 가장 큰 숫자값, 없으면 30
+      let representativeDays = 30;
+      let maxNum = 0;
+      daysByMed.forEach((v) => {
+        const num = parseInt(String(v).replace(/[^0-9]/g, ""), 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+          representativeDays = num;
+        }
+      });
+
+      // TRIGGERS: 10분 전 알람 (사용자 요청), 달력 복잡 방지를 위해 1개 이벤트
+      const slotTimes = {
+        아침: "0800",
+        점심: "1300",
+        저녁: "1900",
+        "자기 전": "2200"
+      };
+
+      const uid = "med-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+      const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+      // DESCRIPTION 구성: 각 약별 이름 + 시간대 + days 정보 포함
+      const descLines = [];
+      confirmed.forEach((r) => {
+        const times = Array.isArray(r.timeslots) ? r.timeslots : [];
+        const timeEntries = times.map((t) => {
+          const time = slotTimes[t] || "0800";
+          return t + " " + time + " " + (r.name || "약") + (r.dose ? " " + r.dose + "알" : "");
+        });
+        if (timeEntries.length === 0 && r.note) {
+          descLines.push(escapeText(r.note));
+          return;
+        }
+        const line = timeEntries.join(" / ") + " (" + (r.days || "") + ")";
+        descLines.push(line);
+      });
+
+      const description = descLines.length
+        ? descLines.join("\\n")
+        : "보호자가 확인한 약 목록";
+
+      const ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//medicine-schedule-largeprint//KO",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        "UID:" + uid,
+        "DTSTAMP:" + now,
+        "DTSTART;VALUE=DATE:" + startDate,
+        "DTEND;VALUE=DATE:" + isoDateOnly(addDays(today, representativeDays)),
+        "SUMMARY:" + escapeText(title),
+        "DESCRIPTION:" + description,
+        "BEGIN:VALARM",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:약 먹을 시간이에요",
+        "TRIGGER:-PT10M",
+        "END:VALARM",
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].join("\r\n") + "\r\n";
 
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/calendar;charset=utf-8");

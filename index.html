@@ -992,23 +992,14 @@
 
       btnIcs.addEventListener("click", async () => {
         try {
-          // 며칠분(days) 수집: 확인된 약들의 days 필드에서 값 수집
-          const daysSet = new Set();
-          confirmed.forEach((r) => {
-            if (r.days) daysSet.add(r.days);
-          });
-          // 대표 days 값: 여러 개면 첫 값, 없으면 기본 30
-          let daysValue = 30;
-          if (daysSet.size) {
-            const first = Array.from(daysSet)[0];
-            const num = parseInt(String(first).replace(/[^0-9]/g, ""), 10);
-            if (!isNaN(num) && num > 0) daysValue = num;
+          if (!confirmed.length) {
+            toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
+            return;
           }
 
           const body = {
             confirmed: confirmed,
-            title: "오늘 먹을 약 (큰 글씨)",
-            daysCount: daysValue
+            title: "오늘 먹을 약 (큰 글씨)"
           };
 
           const res = await fetch("/api/ics", {
@@ -1017,13 +1008,13 @@
             body: JSON.stringify(body)
           });
           if (!res.ok) {
-            toastShow("ICS 생성 실패");
+            const errText = await res.text().catch(() => "");
+            toastShow("ICS 생성 실패: " + (errText || res.statusText));
             return;
           }
-          // 서버는 ICS 텍스트를 raw로 내려줌 (JSON 아님)
           const icsText = await res.text();
-          if (!icsText) {
-            toastShow("ICS 내용이 없어요");
+          if (!icsText || !icsText.includes("BEGIN:VCALENDAR")) {
+            toastShow("ICS 내용이 올바르지 않아요");
             return;
           }
           const blob = new Blob([icsText], { type: "text/calendar;charset=utf-8" });
@@ -1031,11 +1022,13 @@
           const a = document.createElement("a");
           a.href = url;
           a.download = "약먹는시간표.ics";
+          document.body.appendChild(a);
           a.click();
-          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 100);
           toastShow("ICS 달력 파일 저장 완료");
         } catch (e) {
-          toastShow("ICS 저장 중 오류가 났어요");
+          toastShow("ICS 저장 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
       });
 
