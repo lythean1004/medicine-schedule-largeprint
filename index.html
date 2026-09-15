@@ -6,89 +6,316 @@
   <title>약 먹는 시간표 (큰 글씨)</title>
   <style>
     :root {
-      --bg: #ffffff;
-      --ink: #111111;
-      --red: #d32f2f;
-      --line: #cfcfcf;
-      --soft: #f5f5f5;
+      --bg: #faf6f0;
+      --bg-card: #ffffff;
+      --ink: #161616;
+      --ink-soft: #5a534a;
+      --blue: #1565c0;
+      --blue-dark: #0d47a1;
+      --line: #dccfc3;
+      --soft: #f3ede3;
+      --red: #b71c1c;
     }
     * { box-sizing: border-box; }
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+    }
+    body {
       font-family: "Helvetica Neue", Arial, sans-serif;
       color: var(--ink);
       background: var(--bg);
+      -webkit-font-smoothing: antialiased;
     }
-    .wrap { padding: 12px; }
-    h1 { font-size: 22px; margin: 0 0 8px; }
-    p { margin: 0 0 12px; line-height: 1.5; }
-    .note { color: #555; }
-    .step { margin-top: 24px; }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 20px 44px;
+    }
+
+    /* 헤더 배너 */
+    .header-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 22px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+    .header-banner .banner-item {
+      flex: 1;
+      text-align: center;
+    }
+    .header-banner .banner-item:first-child {
+      text-align: left;
+    }
+    .header-banner .banner-item:last-child {
+      text-align: right;
+    }
+    .header-banner .banner-center {
+      font-weight: 700;
+      color: var(--blue);
+      font-size: 16px;
+    }
+    .header-banner .banner-left,
+    .header-banner .banner-right {
+      color: var(--ink-soft);
+    }
+
+    h1 {
+      font-size: 34px;
+      margin: 0 0 6px;
+      color: var(--ink);
+      line-height: 1.3;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .upload-intro {
+      font-size: 21px;
+      line-height: 1.55;
+      margin: 0 0 4px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .upload-intro .note {
+      font-size: 18px;
+      color: var(--ink-soft);
+      font-weight: 400;
+      margin: 0;
+    }
+
+    .step { margin-top: 22px; }
+
     .hidden { display: none; }
 
-    button {
-      font-size: 16px;
-      padding: 10px 16px;
-      border: 1px solid var(--line);
+    /* 파일 선택 영역 */
+    .file-select-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .file-btn {
+      font-size: 20px;
+      font-weight: 600;
+      padding: 14px 22px;
+      background: var(--blue);
+      color: #ffffff;
+      border: 2px solid var(--blue);
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      transition: background 0.15s;
+      box-shadow: 0 2px 6px rgba(21, 101, 192, 0.25);
+    }
+    .file-btn:hover {
+      background: var(--blue-dark);
+      border-color: var(--blue-dark);
+    }
+    .file-btn .cam-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+    .file-input-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .file-name-display {
+      font-size: 19px;
+      color: var(--ink);
+      min-height: 30px;
+      padding: 10px 14px;
       background: var(--soft);
+      border: 2px solid var(--line);
+      border-radius: 10px;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    .file-name-display.has-file {
+      border-color: var(--blue);
+      background: #eaf2fb;
+    }
+    .file-name-display .file-name-placeholder {
+      color: var(--ink-soft);
+    }
+
+    /* 버튼 스텝 */
+    .btn-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .btn-step {
+      font-size: 20px;
+      font-weight: 600;
+      padding: 16px 24px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-step .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--soft);
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 2px solid var(--line);
+    }
+    .btn-step.primary-step {
+      background: var(--blue);
+      color: #ffffff;
+      border-color: var(--blue);
+      box-shadow: 0 3px 8px rgba(21, 101, 192, 0.3);
+    }
+    .btn-step.primary-step .step-num {
+      background: #ffffff;
+      color: var(--blue);
+      border-color: #ffffff;
+    }
+    .btn-step.secondary {
+      background: var(--bg-card);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    .btn-step.disabled-step {
+      opacity: 0.45;
+      filter: grayscale(0.6);
+      pointer-events: none;
+    }
+    .btn-step.disabled-step .step-num {
+      background: var(--soft);
+      color: var(--ink-soft);
+    }
+
+    .parse-status {
+      margin-top: 12px;
+      font-size: 18px;
+      color: var(--ink-soft);
+      min-height: 26px;
+    }
+
+    .guide-box {
+      margin-top: 22px;
+      padding: 16px 18px;
+      background: var(--soft);
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      font-size: 19px;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+    .guide-box .guide-em {
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    .retake-line {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* crop-host 스타일 유지 */
+    #crop-host {
+      margin-top: 14px;
+    }
+    #crop-host .crop-btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .crop-btn {
+      font-size: 17px;
+      font-weight: 600;
+      padding: 11px 18px;
       border-radius: 8px;
       cursor: pointer;
+      border: 2px solid var(--line);
+      background: var(--bg-card);
+      color: var(--ink);
+      transition: background 0.15s;
     }
-    button.primary {
-      background: #111;
+    .crop-btn:hover {
+      background: var(--soft);
+    }
+    .crop-btn.apply-btn {
+      background: var(--blue);
       color: #fff;
-      border-color: #111;
+      border-color: var(--blue);
     }
-    button.danger {
-      background: #fff;
+    .crop-btn.apply-btn:hover {
+      background: var(--blue-dark);
+    }
+    .crop-btn.reset-btn {
       color: var(--red);
       border-color: var(--red);
+      background: #fff;
     }
-    input[type="file"] { font-size: 14px; }
+    .crop-btn.reset-btn:hover {
+      background: #fff5f5;
+    }
 
+    /* 기존 카드/결과 스타일 유지 + 폰트 크기 상향 */
     .card {
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 16px;
-      background: #fff;
+      padding: 18px;
+      background: var(--bg-card);
       overflow-x: auto;
     }
-    .card::-webkit-scrollbar {
-      height: 14px;
-    }
-    .card::-webkit-scrollbar-track {
-      background: #f3f3f3;
-    }
-    .card::-webkit-scrollbar-thumb {
-      background: #888;
-      border-radius: 7px;
-    }
-    .card::-webkit-scrollbar-thumb:hover {
-      background: #555;
-    }
+    .card::-webkit-scrollbar { height: 14px; }
+    .card::-webkit-scrollbar-track { background: #f3f3f3; }
+    .card::-webkit-scrollbar-thumb { background: #888; border-radius: 7px; }
+    .card::-webkit-scrollbar-thumb:hover { background: #555; }
     .card h2 {
-      font-size: 22px;
-      margin: 0 0 12px;
+      font-size: 26px;
+      margin: 0 0 14px;
     }
     .slot {
-      margin-top: 16px;
+      margin-top: 18px;
       page-break-inside: avoid;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
     .slot h3 {
-      font-size: 20px;
+      font-size: 23px;
       margin: 0 0 8px;
       border-bottom: 2px solid var(--ink);
       padding-bottom: 4px;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
-    .slot .empty { color: #777; font-size: 18px; overflow-wrap: anywhere; word-break: break-word; }
+    .slot .empty { color: #777; font-size: 20px; overflow-wrap: anywhere; word-break: break-word; }
 
     .med-row {
-      font-size: 20px;
-      padding: 8px 0;
+      font-size: 22px;
+      padding: 10px 0;
       border-bottom: 1px solid var(--line);
       display: flex;
       flex-wrap: wrap;
@@ -98,16 +325,16 @@
     .med-row .name { flex: 1 1 100%; font-weight: 700; }
     .med-row .meta { color: #333; }
 
-    .confirm-list { margin-top: 12px; }
+    .confirm-list { margin-top: 14px; }
     .confirm-item {
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
-      margin-top: 8px;
-      background: #fff;
+      padding: 14px;
+      margin-top: 10px;
+      background: var(--bg-card);
     }
     .confirm-name {
-      font-size: 20px;
+      font-size: 23px;
       font-weight: 700;
       color: var(--ink);
       display: block;
@@ -122,20 +349,20 @@
       margin-bottom: 8px;
     }
     .confirm-item label {
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
     }
     .confirm-item .fields {
       margin-top: 8px;
-      font-size: 16px;
+      font-size: 18px;
     }
     .confirm-item input[type="text"],
     .confirm-item input[type="number"] {
-      font-size: 16px;
-      padding: 6px 8px;
+      font-size: 18px;
+      padding: 8px 10px;
       border: 1px solid var(--line);
       border-radius: 6px;
-      width: 120px;
+      width: 130px;
     }
     .missing textarea,
     .missing input,
@@ -148,84 +375,82 @@
       font-weight: 700;
     }
 
-    .actions { margin-top: 20px; }
-    .actions button { margin-right: 8px; margin-bottom: 8px; }
+    .actions { margin-top: 22px; }
+    .actions button { margin-right: 10px; margin-bottom: 10px; }
 
     .result-meta {
-      font-size: 14px;
-      color: #555;
-      margin-top: 12px;
+      font-size: 16px;
+      color: var(--ink-soft);
+      margin-top: 14px;
     }
 
     .card-share {
-      margin-top: 12px;
-      font-size: 14px;
-      color: #555;
+      margin-top: 14px;
+      font-size: 16px;
+      color: var(--ink-soft);
       word-break: break-all;
     }
 
     .share-options {
-      margin-top: 10px;
+      margin-top: 12px;
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 12px;
-      background: #fff;
+      padding: 14px;
+      background: var(--bg-card);
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     .share-options .share-opt {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: 15px;
-      padding: 8px 14px;
+      gap: 8px;
+      font-size: 17px;
+      padding: 10px 16px;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--bg-card);
+      color: var(--ink);
       border-radius: 8px;
       cursor: pointer;
       transition: background 0.15s;
     }
-    .share-options .share-opt:hover {
-      background: var(--soft);
-    }
-    .share-options .opt-icon {
-      font-size: 16px;
-    }
+    .share-options .share-opt:hover { background: var(--soft); }
+    .share-options .opt-icon { font-size: 18px; }
     .share-options .tip {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #777;
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--ink-soft);
     }
 
     .toast {
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: #111;
+      background: #161616;
       color: #fff;
-      padding: 8px 14px;
+      padding: 10px 18px;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 16px;
       opacity: 0;
       transition: opacity 0.2s;
       pointer-events: none;
+      z-index: 100;
     }
     .toast.show { opacity: 1; }
 
-    /* 2열 레이아웃: 화면 반씩 — 왼쪽 사진 + 오른쪽 내용/스크롤 */
+    /* 2열 레이아웃 */
     .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 16px;
       align-items: start;
-      padding: 12px 0;
+      padding: 6px 0;
     }
     .photo-panel {
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 6px;
-      background: #fff;
-      min-height: 120px;
+      padding: 8px;
+      background: var(--bg-card);
+      min-height: 140px;
       overflow: hidden;
       position: relative;
       width: 100%;
@@ -236,7 +461,7 @@
       display: block;
       border: 1px solid var(--line);
       border-radius: 6px;
-      background: #f5f5f5;
+      background: #f3ede3;
       max-width: none;
       max-height: none;
       object-fit: contain;
@@ -244,15 +469,15 @@
       display: block;
     }
     .photo-panel .photo-cap {
-      font-size: 13px;
-      color: #555;
-      margin: 8px 0 0;
+      font-size: 15px;
+      color: var(--ink-soft);
+      margin: 10px 0 0;
     }
     .choice-panel {
       min-width: 0;
       overflow-y: auto;
-      padding-bottom: 10px;
-      min-height: 200px;
+      padding-bottom: 12px;
+      min-height: 220px;
     }
     #confirm-area .choice-panel {
       display: flex;
@@ -260,19 +485,20 @@
       max-height: 80vh;
       overflow-y: auto;
     }
-    #confirm-area .actions {
-      margin-top: auto;
-    }
+    #confirm-area .actions { margin-top: auto; }
     #result-area .choice-panel {
       display: flex;
       flex-direction: column;
       max-height: 80vh;
       overflow-y: auto;
     }
-    #result-area .actions {
-      margin-top: auto;
-    }
-    @media (max-width: 560px) {
+    #result-area .actions { margin-top: auto; }
+    @media (max-width: 600px) {
+      .wrap { padding: 20px 14px 32px; }
+      .header-banner { flex-wrap: wrap; justify-content: center; gap: 6px; }
+      .header-banner .banner-item { flex: 0 0 auto; }
+      .header-banner .banner-left,
+      .header-banner .banner-right { text-align: center; }
       .two-col { grid-template-columns: 1fr; }
       .photo-panel { max-width: 100%; }
       .choice-panel { max-height: none; overflow-y: visible; }
@@ -281,6 +507,7 @@
         max-height: none;
         overflow-y: visible;
       }
+      .btn-steps { gap: 10px; }
     }
 
     @media print {
@@ -294,30 +521,59 @@
     <h1>약 먹는 시간표 (큰 글씨)</h1>
 
     <section class="step" id="upload-area">
-      <p>약봉투 사진을 올리거나 찍어 주세요.</p>
-      <p class="note">찍은 사진은 바로 가로·세로 방향을 맞춰서 확인할 수 있어요.</p>
-
-      <input type="file" id="file-input" accept="image/*" />
-      <button id="btn-retake" class="danger hidden" type="button">다시 찍기 / 다른 사진</button>
-
-      <div style="margin-top: 12px;">
-        <button id="btn-crop-open" type="button">사진 방향 맞추기</button>
+      <div class="header-banner">
+        <div class="banner-item banner-left">회원가입·앱 설치 없음</div>
+        <div class="banner-item banner-center">비용 없음</div>
+        <div class="banner-item banner-right">사진 한 장이면 끝</div>
       </div>
 
-      <div id="crop-host" class="hidden" style="margin-top: 12px;">
+      <h1>약 먹는 시간표</h1>
+      <p class="upload-intro">약봉투 사진 한 장만 올려주세요.</p>
+      <p class="upload-intro note">회원가입·앱 설치 없이 바로 볼 수 있습니다.</p>
+
+      <div class="file-select-area">
+        <label class="file-btn" for="file-input">
+          <span class="cam-icon">📷</span>
+          <span>사진 고르기</span>
+        </label>
+        <input type="file" id="file-input" accept="image/*" class="file-input-hidden" />
+        <div class="file-name-display" id="file-name-display">
+          <span class="file-name-placeholder">사진을 고르면 여기에 파일 이름이 크게 보여요</span>
+        </div>
+      </div>
+
+      <div class="btn-steps">
+        <button class="btn-step primary-step" id="btn-crop-open" type="button">
+          <span class="step-num">1</span>
+          사진 방향 맞추기
+        </button>
+        <button class="btn-step secondary" id="btn-parse" type="button">
+          <span class="step-num">2</span>
+          글자 읽기
+        </button>
+      </div>
+
+      <div class="parse-status" id="parse-status"></div>
+
+      <div class="guide-box">
+        사진을 고른 뒤 <span class="guide-em">‘글자 읽기’</span>를 눌러 주세요.
+      </div>
+
+      <div class="retake-line">
+        <button id="btn-retake" class="danger hidden" type="button">다시 찍기 / 다른 사진</button>
+      </div>
+
+      <div id="crop-host" class="hidden">
         <canvas id="crop-canvas" style="border:1px solid var(--line); max-width:100%; touch-action:none;"></canvas>
-        <div style="margin-top:8px;">
-          <button id="btn-crop-rotate-left" type="button">◀ 왼쪽으로 90°</button>
-          <button id="btn-crop-rotate-right" type="button">오른쪽으로 90° ▶</button>
+        <div class="crop-btn-row">
+          <button class="crop-btn" id="btn-crop-rotate-left" type="button">◀ 왼쪽으로 90°</button>
+          <button class="crop-btn" id="btn-crop-rotate-right" type="button">오른쪽으로 90° ▶</button>
         </div>
-        <div style="margin-top:6px;">
-          <button id="btn-crop-apply" type="button">이 방향으로 사용</button>
-          <button id="btn-crop-reset" type="button">돌리기 취소</button>
+        <div class="crop-btn-row" style="margin-top:8px;">
+          <button class="crop-btn apply-btn" id="btn-crop-apply" type="button">이 방향으로 사용</button>
+          <button class="crop-btn reset-btn" id="btn-crop-reset" type="button">돌리기 취소</button>
         </div>
       </div>
-
-      <button id="btn-parse" class="primary" type="button">글자 읽기</button>
-      <div id="parse-status" style="margin-top: 10px; color:#555;"></div>
     </section>
 
     <section class="step hidden" id="confirm-area">
@@ -610,6 +866,35 @@
         btnRetake.classList.add("hidden");
         showOnly("upload");
       });
+
+      // 파일 이름 표시 + 글자 읽기 버튼 시각 상태 (기존 동작과 무관, 화면용만)
+      const fileNameDisplay = $("#file-name-display");
+      const fileNamePlaceholder = fileNameDisplay && fileNameDisplay.querySelector(".file-name-placeholder");
+
+      function updateFileDisplay() {
+        if (!fileNameDisplay) return;
+        if (fileInput.files && fileInput.files[0]) {
+          const name = fileInput.files[0].name;
+          if (fileNamePlaceholder) fileNamePlaceholder.remove();
+          fileNameDisplay.textContent = name;
+          fileNameDisplay.classList.add("has-file");
+          btnParse.classList.remove("disabled-step");
+        } else {
+          if (!fileNamePlaceholder) {
+            const ph = document.createElement("span");
+            ph.className = "file-name-placeholder";
+            ph.textContent = "사진을 고르면 여기에 파일 이름이 크게 보여요";
+            fileNameDisplay.appendChild(ph);
+          } else {
+            fileNameDisplay.textContent = "";
+          }
+          fileNameDisplay.classList.remove("has-file");
+          btnParse.classList.add("disabled-step");
+        }
+      }
+
+      fileInput.addEventListener("change", () => { updateFileDisplay(); });
+      btnRetake.addEventListener("click", () => { updateFileDisplay(); });
 
       btnReset.addEventListener("click", () => {
         fileBlob = null;
