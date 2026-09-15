@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>약 먹는 시간표 (큰 글씨)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --ink: #111111;
+      --red: #d32f2f;
+      --line: #cfcfcf;
+      --soft: #f5f5f5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    p { margin: 0 0 12px; line-height: 1.5; }
+    .note { color: #555; }
+    .step { margin-top: 24px; }
+    .hidden { display: none; }
+
+    button {
+      font-size: 16px;
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button.primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    button.danger {
+      background: #fff;
+      color: var(--red);
+      border-color: var(--red);
+    }
+    input[type="file"] { font-size: 14px; }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      background: #fff;
+    }
+    .card h2 {
+      font-size: 22px;
+      margin: 0 0 12px;
+    }
+    .slot {
+      margin-top: 16px;
+      page-break-inside: avoid;
+    }
+    .slot h3 {
+      font-size: 20px;
+      margin: 0 0 8px;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 4px;
+    }
+    .slot .empty { color: #777; font-size: 18px; }
+
+    .med-row {
+      font-size: 20px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: baseline;
+    }
+    .med-row .name { flex: 1 1 100%; font-weight: 700; }
+    .med-row .meta { color: #333; }
+
+    .confirm-list { margin-top: 12px; }
+    .confirm-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 8px;
+      background: #fff;
+    }
+    .confirm-item .ck {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .confirm-item label {
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .confirm-item .fields {
+      margin-top: 8px;
+      font-size: 16px;
+    }
+    .confirm-item input[type="text"],
+    .confirm-item input[type="number"] {
+      font-size: 16px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      width: 120px;
+    }
+    .missing textarea,
+    .missing input,
+    .missing select {
+      border-color: var(--red);
+      background: #fff5f5;
+    }
+    .missing .label-missing {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .actions { margin-top: 20px; }
+    .actions button { margin-right: 8px; margin-bottom: 8px; }
+
+    .result-meta {
+      font-size: 14px;
+      color: #555;
+      margin-top: 12px;
+    }
+
+    .card-share {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #555;
+      word-break: break-all;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    @media print {
+      .actions, .confirm-list, .upload-area, .noop { display: none !important; }
+      .card { border: 1px solid #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>약 먹는 시간표 (큰 글씨)</h1>
+
+    <section class="step" id="upload-area">
+      <p>약봉투 사진을 올리거나 찍어 주세요.</p>
+      <p class="note">찍은 사진은 바로 가로·세로 방향을 맞춰서 확인할 수 있어요.</p>
+
+      <input type="file" id="file-input" accept="image/*" />
+      <button id="btn-retake" class="danger hidden" type="button">다시 찍기 / 다른 사진</button>
+
+      <div style="margin-top: 12px;">
+        <button id="btn-crop-open" type="button">사진 방향 맞추기</button>
+      </div>
+
+      <div id="crop-host" class="hidden" style="margin-top: 12px;">
+        <canvas id="crop-canvas" style="border:1px solid var(--line); max-width:100%; touch-action:none;"></canvas>
+        <div style="margin-top:8px;">
+          <button id="btn-crop-apply" type="button">이 방향으로 사용</button>
+          <button id="btn-crop-reset" type="button">돌리기 취소</button>
+        </div>
+      </div>
+
+      <button id="btn-parse" class="primary" type="button">글자 읽기</button>
+      <div id="parse-status" style="margin-top: 10px; color:#555;"></div>
+    </section>
+
+    <section class="step hidden" id="confirm-area">
+      <p>약 이름 초안이 읽혔어요. 보호자가 직접 확인해 주세요.</p>
+      <p class="note">
+        입력하지 않은 칸은 붉은 칸으로 표시돼요.<br />
+        보호자가 확인 체크를 누르면, 자동 읽은 초안을 덮어쓰고 보호자가 확정한 값만 반영해요.
+      </p>
+
+      <div id="confirm-list" class="confirm-list"></div>
+
+      <div class="actions">
+        <button id="btn-confirm" class="primary" type="button">보호자 확인 완료</button>
+        <button id="btn-edit" type="button">수정</button>
+        <button id="btn-reset" class="danger" type="button">처음으로</button>
+      </div>
+
+      <div id="confirm-status" style="margin-top: 10px; color:#555;"></div>
+    </section>
+
+    <section class="step hidden" id="result-area">
+      <div class="card" id="result-card"></div>
+      <div class="actions">
+        <button id="btn-save-png" type="button">카드 PNG 저장</button>
+        <button id="btn-save-pdf" type="button">PDF 저장</button>
+        <button id="btn-copy-html" type="button">카드 화면 복사</button>
+        <button id="btn-share-link" type="button">공유 링크 만들기</button>
+        <button id="btn-ics" type="button">달력 ICS 저장</button>
+      </div>
+      <div id="result-meta" class="result-meta"></div>
+      <div id="share-host" class="card-share hidden"></div>
+    </section>
+
+    <div id="start-empty" class="step">
+      <p>정리할 약봉투 사진을 올려 주세요.</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      let fileBlob = null;
+      let rotatedBlob = null;
+      let ocrText = "";
+      let medDraft = [];
+      let confirmed = [];
+
+      const $ = (s) => document.querySelector(s);
+      const fileInput = $("#file-input");
+      const btnRetake = $("#btn-retake");
+      const btnParse = $("#btn-parse");
+      const btnCropOpen = $("#btn-crop-open");
+      const cropHost = $("#crop-host");
+      const cropCanvas = $("#crop-canvas");
+      const btnCropApply = $("#btn-crop-apply");
+      const btnCropReset = $("#btn-crop-reset");
+      const parseStatus = $("#parse-status");
+      const confirmArea = $("#confirm-area");
+      const confirmList = $("#confirm-list");
+      const btnConfirm = $("#btn-confirm");
+      const btnEdit = $("#btn-edit");
+      const btnReset = $("#btn-reset");
+      const confirmStatus = $("#confirm-status");
+      const resultArea = $("#result-area");
+      const resultCard = $("#result-card");
+      const resultMeta = $("#result-meta");
+      const shareHost = $("#share-host");
+      const btnSavePng = $("#btn-save-png");
+      const btnSavePdf = $("#btn-save-pdf");
+      const btnCopyHtml = $("#btn-copy-html");
+      const btnShareLink = $("#btn-share-link");
+      const btnIcs = $("#btn-ics");
+      const toast = $("#toast");
+
+      function showOnly(shows) {
+        const all = [
+          "upload-area", "confirm-area", "result-area", "start-empty"
+        ];
+        all.forEach((id) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (shows === "upload") {
+            el.classList.toggle("hidden", id !== "upload-area" && id !== "start-empty");
+          } else if (shows === "confirm") {
+            el.classList.toggle("hidden", id !== "confirm-area");
+          } else if (shows === "result") {
+            el.classList.toggle("hidden", id !== "result-area");
+          } else if (shows === "start") {
+            el.classList.toggle("hidden", id !== "start-empty");
+          }
+        });
+      }
+
+      function toastShow(msg) {
+        toast.textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+
+      function readFileAsDataURL(blob) {
+        return new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = reject;
+          r.readAsDataURL(blob);
+        });
+      }
+
+      function readFileAsBlob(inputEl) {
+        return new Promise((resolve, reject) => {
+          if (!inputEl.files || !inputEl.files[0]) {
+            reject(new Error("파일이 없어요"));
+            return;
+          }
+          const b = inputEl.files[0];
+          fileBlob = b;
+          resolve(b);
+        });
+      }
+
+      let rotationDeg = 0;
+
+      async function openCropView() {
+        if (!fileBlob) {
+          toastShow("사진이 없어요");
+          return;
+        }
+        rotationDeg = 0;
+        const url = await readFileAsDataURL(fileBlob);
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+        cropCanvas.width = img.naturalWidth;
+        cropCanvas.height = img.naturalHeight;
+        const ctx = cropCanvas.getContext("2d");
+        ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+        ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
+        ctx.rotate((rotationDeg * Math.PI) / 180);
+        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+        cropHost.classList.remove("hidden");
+      }
+
+      function applyRotation() {
+        const img = new Image();
+        const url = cropCanvas.toDataURL("image/jpeg", 0.92);
+        img.src = url;
+        return new Promise((resolve) => {
+          img.onload = () => {
+            const c = document.createElement("canvas");
+            c.width = cropCanvas.width;
+            c.height = cropCanvas.height;
+            const ctx = c.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            c.toBlob((blob) => {
+              rotatedBlob = blob || fileBlob;
+              resolve();
+            }, "image/jpeg", 0.92);
+          };
+        });
+      }
+
+      btnCropOpen.addEventListener("click", openCropView);
+
+      btnCropApply.addEventListener("click", async () => {
+        await applyRotation();
+        cropHost.classList.add("hidden");
+        toastShow("방향을 맞췄어요");
+      });
+
+      btnCropReset.addEventListener("click", async () => {
+        rotationDeg = 0;
+        const url = await readFileAsDataURL(fileBlob);
+        const img = new Image();
+        await new Promise((resolve) => { img.onload = resolve; img.src = url; });
+        cropCanvas.width = img.naturalWidth;
+        cropCanvas.height = img.naturalHeight;
+        const ctx = cropCanvas.getContext("2d");
+        ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+        ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
+        ctx.rotate(0);
+        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+      });
+
+      fileInput.addEventListener("change", async () => {
+        try {
+          await readFileAsBlob(fileInput);
+          btnRetake.classList.remove("hidden");
+          showOnly("upload");
+          toastShow("사진을 올렸어요");
+        } catch (e) {
+          toastShow("사진을 다시 골라 주세요");
+        }
+      });
+
+      btnRetake.addEventListener("click", () => {
+        fileInput.value = "";
+        fileBlob = null;
+        rotatedBlob = null;
+        cropHost.classList.add("hidden");
+        btnRetake.classList.add("hidden");
+        showOnly("upload");
+      });
+
+      btnReset.addEventListener("click", () => {
+        fileBlob = null;
+        rotatedBlob = null;
+        ocrText = "";
+        medDraft = [];
+        confirmed = [];
+        confirmArea.classList.add("hidden");
+        resultArea.classList.add("hidden");
+        shareHost.classList.add("hidden");
+        showOnly("start");
+      });
+
+      btnParse.addEventListener("click", async () => {
+        const imgBlob = rotatedBlob || fileBlob;
+        if (!imgBlob) {
+          toastShow("사진이 없어요");
+          return;
+        }
+        btnParse.disabled = true;
+        parseStatus.textContent = "글자를 읽고 있어요…";
+        try {
+          const res = await fetch("/api/parse", {
+            method: "POST",
+            headers: { "Content-Type": "multipart/form-data" },
+            body: new FormData().append("file", imgBlob, "photo.jpg")
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            parseStatus.textContent = "글자 읽기 실패: " + (data.error || res.statusText);
+            return;
+          }
+          ocrText = data.text || "";
+          medDraft = data.meds || [];
+          buildConfirmView();
+          showOnly("confirm");
+          parseStatus.textContent = "글자 읽기 완료";
+          toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
+        } catch (e) {
+          parseStatus.textContent = "네트워크 오류가 났어요";
+          toastShow("다시 시도해 주세요");
+        } finally {
+          btnParse.disabled = false;
+        }
+      });
+
+      function buildConfirmView() {
+        confirmList.innerHTML = "";
+        const list = medDraft.length ? medDraft : [];
+        if (!list.length) {
+          confirmList.innerHTML =
+            '<div class="confirm-item missing"><div class="label-missing">약 이름 초안이 안 보여요.</div>' +
+            '아래에서 보호자가 직접 약 이름을 적어 주세요.</div>';
+        }
+        list.forEach((m) => {
+          const item = document.createElement("div");
+          item.className = "confirm-item";
+          item.dataset.name = m.name;
+
+          const ck = document.createElement("div");
+          ck.className = "ck";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.id = "ck-" + escapedId(m.name);
+          const lbl = document.createElement("label");
+          lbl.htmlFor = cb.id;
+          lbl.textContent = "확인 완료";
+          ck.appendChild(cb);
+          ck.appendChild(lbl);
+
+          const body = document.createElement("div");
+          body.className = "fields";
+
+          const timeGroup = document.createElement("div");
+          timeGroup.style.marginTop = "6px";
+          const slots = ["아침", "점심", "저녁", "자기 전"];
+          slots.forEach((s) => {
+            const row = document.createElement("label");
+            row.style.display = "block";
+            row.style.fontSize = "17px";
+            row.style.marginBottom = "4px";
+            const cb2 = document.createElement("input");
+            cb2.type = "checkbox";
+            cb2.value = s;
+            cb2.name = "time-" + escapedId(m.name);
+            row.appendChild(cb2);
+            row.appendChild(document.createTextNode(" " + s));
+            timeGroup.appendChild(row);
+          });
+          body.appendChild(timeGroup);
+
+          const row = document.createElement("div");
+          row.style.marginTop = "8px";
+          row.innerHTML =
+            '<div><span class="missing-text">몇 알</span> ';
+          const doseInput = document.createElement("input");
+          doseInput.type = "text";
+          doseInput.placeholder = "예: 1";
+          doseInput.dataset.field = "dose";
+          row.appendChild(doseInput);
+          row.innerHTML += '</div>';
+
+          const row2 = document.createElement("div");
+          row2.style.marginTop = "6px";
+          row2.innerHTML = '<div><span class="missing-text">언제</span> ';
+          const whenInput = document.createElement("input");
+          whenInput.type = "text";
+          whenInput.placeholder = "예: 식후 30분";
+          whenInput.dataset.field = "when";
+          row2.appendChild(whenInput);
+          row2.innerHTML += '</div>';
+
+          const row3 = document.createElement("div");
+          row3.style.marginTop = "6px";
+          row3.innerHTML = '<div><span class="missing-text">며칠분</span> ';
+          const daysInput = document.createElement("input");
+          daysInput.type = "text";
+          daysInput.placeholder = "예: 30일분";
+          daysInput.dataset.field = "days";
+          row3.appendChild(daysInput);
+          row3.innerHTML += '</div>';
+
+          const row4 = document.createElement("div");
+          row4.style.marginTop = "6px";
+          row4.innerHTML =
+            '<div><span class="missing-text">비고(확인 메모)</span> ';
+          const noteInput = document.createElement("input");
+          noteInput.type = "text";
+          noteInput.placeholder = "예: 약사님께 확인";
+          noteInput.dataset.field = "note";
+          row4.appendChild(noteInput);
+          row4.innerHTML += '</div>';
+
+          body.appendChild(row);
+          body.appendChild(row2);
+          body.appendChild(row3);
+          body.appendChild(row4);
+
+          item.appendChild(ck);
+          item.appendChild(body);
+          confirmList.appendChild(item);
+        });
+
+        markMissing();
+      }
+
+      function escapedId(name) {
+        return String(name).replace(/[^A-Za-z0-9]/g, "_");
+      }
+
+      function markMissing() {
+        confirmList.querySelectorAll(".confirm-item").forEach((item) => {
+          const checkboxes = item.querySelectorAll('input[type="checkbox"]');
+          const textInputs = item.querySelectorAll('input[type="text"]');
+          const checked = Array.from(checkboxes).some((c) => c.checked);
+          const anyBlank = Array.from(textInputs).some((t) => !t.value.trim());
+          const hasAnyInput = checked || Array.from(textInputs).some((t) => t.value.trim());
+          if (!hasAnyInput) {
+            item.classList.add("missing");
+          } else {
+            item.classList.remove("missing");
+          }
+        });
+      }
+
+      confirmList.addEventListener("change", markMissing);
+      confirmList.addEventListener("input", markMissing);
+
+      btnConfirm.addEventListener("click", () => {
+        const items = confirmList.querySelectorAll(".confirm-item");
+        const next = [];
+        let anyChecked = false;
+        items.forEach((item) => {
+          const name = item.dataset.name || "(이름 없음)";
+          const cb = item.querySelector('input[type="checkbox"]');
+          const checked = cb ? cb.checked : false;
+          anyChecked = anyChecked || checked;
+
+          const timeValues = Array.from(
+            item.querySelectorAll('input[name^="time-"]:checked')
+          ).map((c) => c.value);
+
+          const doseInput = item.querySelector('input[data-field="dose"]');
+          const whenInput = item.querySelector('input[data-field="when"]');
+          const daysInput = item.querySelector('input[data-field="days"]');
+          const noteInput = item.querySelector('input[data-field="note"]');
+
+          next.push({
+            name: name,
+            checked: checked,
+            timeslots: timeValues,
+            dose: doseInput ? doseInput.value.trim() : "",
+            when: whenInput ? whenInput.value.trim() : "",
+            days: daysInput ? daysInput.value.trim() : "",
+            note: noteInput ? noteInput.value.trim() : ""
+          });
+        });
+
+        if (!anyChecked) {
+          confirmStatus.textContent = "확인 완료 체크를 하나 이상 눌러 주세요.";
+          toastShow("확인 체크를 눌러 주세요");
+          return;
+        }
+
+        confirmed = next.filter((r) => r.checked);
+        confirmStatus.textContent = "보호자 확인 완료로 덮어썼어요";
+
+        renderResult();
+        showOnly("result");
+        toastShow("보호자가 확인한 내용으로 반영했어요");
+      });
+
+      btnEdit.addEventListener("click", () => {
+        showOnly("confirm");
+        toastShow("수정할 수 있어요");
+      });
+
+      function renderResult() {
+        const slots = { 아침: [], 점심: [], 저녁: [], "자기 전": [] };
+        const others = [];
+
+        confirmed.forEach((r) => {
+          const times = r.timeslots || [];
+          if (!times.length) {
+            if (r.note) others.push({ name: r.name, note: r.note, dose: r.dose, when: r.when, days: r.days });
+            return;
+          }
+          times.forEach((t) => {
+            if (slots[t]) slots[t].push(r);
+          });
+        });
+
+        let html = "";
+        html +=
+          '<div class="card"><h2>오늘 먹을 약 (큰 글씨)</h2>';
+        html += slotBlock("아침", slots["아침"]);
+        html += slotBlock("점심", slots["점심"]);
+        html += slotBlock("저녁", slots["저녁"]);
+        html += slotBlock("자기 전", slots["자기 전"]);
+
+        html +=
+          '<div class="slot"><h3>확인 메모 / 약사님께 확인할 것</h3>';
+        others.forEach((o) => {
+          html +=
+            '<div class="med-row"><span class="name">' +
+            escapeHtml(o.name) +
+            '</span><span class="meta">' +
+            (o.dose ? escapeHtml(o.dose) + " / " : "") +
+            (o.when ? escapeHtml(o.when) : "") +
+            (o.note ? " / " + escapeHtml(o.note) : "") +
+            '</span></div>';
+        });
+        if (!others.length) html += '<div class="empty">없음</div>';
+        html += "</div>";
+
+        html +=
+          '<div class="slot"><h3>며칠분</h3>';
+        const daysSet = new Set();
+        confirmed.forEach((r) => {
+          if (r.days) daysSet.add(r.name + " / " + r.days);
+        });
+        if (daysSet.size) {
+          daysSet.forEach((d) => {
+            html +=
+              '<div class="med-row"><span class="name">' +
+              escapeHtml(d.split(" / ")[0]) +
+              '</span><span class="meta">' + escapeHtml(d.split(" / ").slice(1).join(" / ")) + '</span></div>';
+          });
+        } else {
+          html += '<div class="empty">없음</div>';
+        }
+        html += "</div>";
+
+        html += "</div>";
+        resultCard.innerHTML = html;
+
+        const total = confirmed.length;
+        resultMeta.textContent =
+          "보호자가 확인한 약 " + total + "개 반영 / 사진은 저장하지 않았어요";
+      }
+
+      function slotBlock(title, items) {
+        if (!items.length) {
+          return '<div class="slot"><h3>' + title + '</h3><div class="empty">없음</div></div>';
+        }
+        let html = '<div class="slot"><h3>' + title + '</h3>';
+        items.forEach((r) => {
+          html +=
+            '<div class="med-row"><span class="name">' +
+            escapeHtml(r.name) +
+            '</span>';
+          const meta = [];
+          if (r.dose) meta.push(escapeHtml(r.dose) + "알");
+          if (r.when) meta.push(escapeHtml(r.when));
+          html += '<span class="meta">' + meta.join(" / ") + '</span></div>';
+        });
+        html += "</div>";
+        return html;
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      btnSavePng.addEventListener("click", async () => {
+        try {
+          const blob = await fetch("/api/generate-card?format=png", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              confirmed: confirmed,
+              title: "오늘 먹을 약 (큰 글씨)"
+            })
+          }).then((r) => r.blob());
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "약먹는시간표_카드.png";
+          a.click();
+          URL.revokeObjectURL(url);
+          toastShow("PNG 카드 저장 완료");
+        } catch (e) {
+          toastShow("PNG 저장 중 오류가 났어요");
+        }
+      });
+
+      btnSavePdf.addEventListener("click", async () => {
+        try {
+          const blob = await fetch("/api/generate-card?format=pdf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              confirmed: confirmed,
+              title: "오늘 먹을 약 (큰 글씨)"
+            })
+          }).then((r) => r.blob());
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "약먹는시간표_카드.pdf";
+          a.click();
+          URL.revokeObjectURL(url);
+          toastShow("PDF 저장 완료");
+        } catch (e) {
+          toastShow("PDF 저장 중 오류가 났어요");
+        }
+      });
+
+      btnCopyHtml.addEventListener("click", () => {
+        const cardEl = document.querySelector(".card");
+        if (!cardEl) return;
+        const full = cardEl.outerHTML;
+        navigator.clipboard
+          .writeText(full)
+          .then(() => toastShow("카드 HTML을 복사했어요"))
+          .catch(() => toastShow("복사에 실패했어요"));
+      });
+
+      btnShareLink.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/api/share", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ confirmed: confirmed })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            toastShow("공유 링크 만들기 실패");
+            return;
+          }
+          const link = data.url || "";
+          if (link) {
+            shareHost.classList.remove("hidden");
+            shareHost.textContent = "공유 링크: " + link;
+            navigator.clipboard.writeText(link).then(
+              () => toastShow("공유 링크를 복사했어요"),
+              () => {}
+            );
+          } else {
+            toastShow("공유 링크를 만들 수 없었어요");
+          }
+        } catch (e) {
+          toastShow("공유 링크 만들기 중 오류가 났어요");
+        }
+      });
+
+      btnIcs.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/api/ics", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              confirmed: confirmed,
+              title: "오늘 먹을 약 (큰 글씨)"
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            toastShow("ICS 생성 실패");
+            return;
+          }
+          const ics = data.content || "";
+          const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "약먹는시간표.ics";
+          a.click();
+          URL.revokeObjectURL(url);
+          toastShow("ICS 달력 파일 저장 완료");
+        } catch (e) {
+          toastShow("ICS 저장 중 오류가 났어요");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
