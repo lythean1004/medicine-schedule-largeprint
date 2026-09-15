@@ -153,6 +153,38 @@
     }
     .toast.show { opacity: 1; }
 
+    /* 2열 레이아웃: 사진(왼쪽 고정) + 선택/결과(오른쪽) */
+    .two-col {
+      display: grid;
+      grid-template-columns: 170px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .photo-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+    }
+    .photo-panel img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f5f5f5;
+    }
+    .photo-panel .photo-cap {
+      font-size: 13px;
+      color: #555;
+      margin: 6px 0 0;
+    }
+    .choice-panel { min-width: 0; }
+    @media (max-width: 560px) {
+      .two-col { grid-template-columns: 1fr; }
+      .photo-panel { max-width: 240px; margin: 0 auto; }
+    }
+
     @media print {
       .actions, .confirm-list, .upload-area, .noop { display: none !important; }
       .card { border: 1px solid #000; }
@@ -187,34 +219,50 @@
     </section>
 
     <section class="step hidden" id="confirm-area">
-      <p>약 이름 초안이 읽혔어요. 보호자가 직접 확인해 주세요.</p>
-      <p class="note">
-        입력하지 않은 칸은 붉은 칸으로 표시돼요.<br />
-        보호자가 확인 체크를 누르면, 자동 읽은 초안을 덮어쓰고 보호자가 확정한 값만 반영해요.
-      </p>
+      <div class="two-col">
+        <div class="photo-panel">
+          <img id="confirm-photo" src="" alt="약봉투 사진" />
+          <p class="photo-cap">올린 사진</p>
+        </div>
+        <div class="choice-panel">
+          <p>약 이름 초안이 읽혔어요. 보호자가 직접 확인해 주세요.</p>
+          <p class="note">
+            입력하지 않은 칸은 붉은 칸으로 표시돼요.<br />
+            보호자가 확인 체크를 누르면, 자동 읽은 초안을 덮어쓰고 보호자가 확정한 값만 반영해요.
+          </p>
 
-      <div id="confirm-list" class="confirm-list"></div>
+          <div id="confirm-list" class="confirm-list"></div>
 
-      <div class="actions">
-        <button id="btn-confirm" class="primary" type="button">보호자 확인 완료</button>
-        <button id="btn-edit" type="button">수정</button>
-        <button id="btn-reset" class="danger" type="button">처음으로</button>
+          <div class="actions">
+            <button id="btn-confirm" class="primary" type="button">보호자 확인 완료</button>
+            <button id="btn-edit" type="button">수정</button>
+            <button id="btn-reset" class="danger" type="button">처음으로</button>
+          </div>
+
+          <div id="confirm-status" style="margin-top: 10px; color:#555;"></div>
+        </div>
       </div>
-
-      <div id="confirm-status" style="margin-top: 10px; color:#555;"></div>
     </section>
 
     <section class="step hidden" id="result-area">
-      <div class="card" id="result-card"></div>
-      <div class="actions">
-        <button id="btn-save-png" type="button">카드 PNG 저장</button>
-        <button id="btn-save-pdf" type="button">PDF 저장</button>
-        <button id="btn-copy-html" type="button">카드 화면 복사</button>
-        <button id="btn-share-link" type="button">공유 링크 만들기</button>
-        <button id="btn-ics" type="button">달력 ICS 저장</button>
+      <div class="two-col">
+        <div class="photo-panel">
+          <img id="result-photo" src="" alt="약봉투 사진" />
+          <p class="photo-cap">올린 사진</p>
+        </div>
+        <div class="choice-panel">
+          <div class="card" id="result-card"></div>
+          <div class="actions">
+            <button id="btn-save-png" type="button">카드 PNG 저장</button>
+            <button id="btn-save-pdf" type="button">PDF 저장</button>
+            <button id="btn-copy-html" type="button">카드 화면 복사</button>
+            <button id="btn-share-link" type="button">공유 링크 만들기</button>
+            <button id="btn-ics" type="button">달력 ICS 저장</button>
+          </div>
+          <div id="result-meta" class="result-meta"></div>
+          <div id="share-host" class="card-share hidden"></div>
+        </div>
       </div>
-      <div id="result-meta" class="result-meta"></div>
-      <div id="share-host" class="card-share hidden"></div>
     </section>
 
     <section class="step hidden" id="parse-error-detail">
@@ -275,6 +323,9 @@
       const btnIcs = $("#btn-ics");
       const toast = $("#toast");
 
+      const confirmPhoto = $("#confirm-photo");
+      const resultPhoto = $("#result-photo");
+
       const parseErrorDetail = $("#parse-error-detail");
       const parseErrorKind = $("#parse-error-kind");
       const parseErrorBody = $("#parse-error-body");
@@ -294,6 +345,7 @@
             el.classList.toggle("hidden", id !== "confirm-area");
           } else if (shows === "result") {
             el.classList.toggle("hidden", id !== "result-area");
+            setPhoto(resultPhoto, rotatedBlob || fileBlob);
           } else if (shows === "start") {
             el.classList.toggle("hidden", id !== "start-empty");
           }
@@ -346,6 +398,16 @@
           r.onerror = reject;
           r.readAsDataURL(blob);
         });
+      }
+
+      async function setPhoto(imgEl, blob) {
+        if (!imgEl || !blob) return;
+        try {
+          const url = await readFileAsDataURL(blob);
+          imgEl.src = url;
+        } catch (e) {
+          imgEl.src = "";
+        }
       }
 
       function readFileAsBlob(inputEl) {
@@ -486,6 +548,7 @@
           }
           ocrText = data.text || "";
           medDraft = data.meds || [];
+          await setPhoto(confirmPhoto, imgBlob);
           buildConfirmView();
           showOnly("confirm");
           parseStatus.textContent = "글자 읽기 완료";
@@ -526,6 +589,7 @@
           }
           ocrText = data.text || "";
           medDraft = data.meds || [];
+          await setPhoto(confirmPhoto, imgBlob);
           buildConfirmView();
           showOnly("confirm");
           parseStatus.textContent = "글자 읽기 완료";
@@ -545,7 +609,21 @@
         confirmList.innerHTML = "";
         // 기존 약 박스가 남아 있으면 다시 제거
         confirmList.querySelectorAll(".confirm-item").forEach((el) => el.remove());
-        const list = medDraft.length ? medDraft : [];
+        const rawList = medDraft.length ? medDraft : [];
+        // 같은 약 이름이 중복으로 들어오면 박스가 반복될 수 있어,
+        // 이름 기준으로 처음 나온 항목만 남긴다.
+        const seen = new Set();
+        const deduped = [];
+        for (const m of rawList) {
+          const key = m && m.name ? String(m.name).trim() : "";
+          if (key && !seen.has(key)) {
+            seen.add(key);
+            deduped.push(m);
+          } else if (!key) {
+            deduped.push(m);
+          }
+        }
+        const list = deduped.length ? deduped : [];
         if (!list.length) {
           confirmList.innerHTML =
             '<div class="confirm-item missing"><div class="label-missing">약 이름 초안이 안 보여요.</div>' +
@@ -563,6 +641,8 @@
           nameEl.style.borderBottom = "2px solid var(--ink)";
           nameEl.style.paddingBottom = "4px";
           nameEl.textContent = m.name || "(약 이름 없음)";
+
+          item.appendChild(nameEl);
 
           const body = document.createElement("div");
           body.className = "fields";
