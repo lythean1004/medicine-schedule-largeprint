@@ -414,10 +414,11 @@
         btnParse.disabled = true;
         parseStatus.textContent = "글자를 읽고 있어요…";
         try {
+          const form = new FormData();
+          form.append("file", imgBlob, "photo.jpg");
           const res = await fetch("/api/parse", {
             method: "POST",
-            headers: { "Content-Type": "multipart/form-data" },
-            body: new FormData().append("file", imgBlob, "photo.jpg")
+            body: form
           });
           const data = await res.json();
           if (!res.ok) {
