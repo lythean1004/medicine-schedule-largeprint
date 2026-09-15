@@ -34,38 +34,84 @@ function extractMedDraft(text) {
   const out = [];
   const seen = new Set();
 
-  const SKIP_RE = /^(투약량|횟수|일수|먹는약|치료제|용법|용량|투여|주의|안내|복약|복용|횟수|일수|약|의약품|부작용|피해구제|무면허|아침|점심|저녁|자기 전|며칠분|일|일분|회분|알|캡슐|정|mg|g|mL|포|매|회)$/i;
+  const PHONE_IN_PAREN_RE = /\(\d{2,3}-\d{3,4}-\d{4}\)/;
+  const PHONE_LINE_RE = /^\(?\d{2,3}-\d{3,4}-\d{4}\)?$/;
+  const PHONE_START_RE = /^\(\d{2,3}-\d{3,4}-\d{4}\)\s*$/;
+
+  const INGREDIENT_ONLY_RE = /^[A-Za-z가-힣]+(\s+\d+(\.\d+)?\s*(mg|g|mL|mcg|μg|mg\/kg)?)\s*$/i;
+
+  // 라벨/머리말 키워드 (라인 일부에 포함되면 제외)
+  const LABEL_RE = /(투약량|횟수|일수|먹는약|치료제|용법|용량|투여|안내|복약|복용|부작용|피해구제|무면허|약품이미지|복약안내|복약만료일|비급여|본|취급|제조|판매|가격|아침|점심|저녁|자기 전|며칠분|일분|회분)/i;
+
+  const FORM_RE = /\b(정|캡슐|주사|시럽|산|과립|현탁|액|크림|연고|패취|트로키|츄어블|서방|속방|장용|필름|코팅|마그네슘|칼슘|나트륨|수화물|베실산염|염산염|황산염|아세트산|푸마르산|말레산|구연산|젖산)\b/i;
 
   for (const raw of lines) {
     const clean = sanitizeForDraft(raw);
     if (!clean) continue;
 
+    let work = clean.replace(/^\*/, "").trim();
+    if (!work) continue;
+
+    // 1) 라인 전체가 전화번호면 제외
+    if (PHONE_LINE_RE.test(work)) continue;
+    // 2) 라인 앞이 전화번호 괄호면 제외
+    if (PHONE_START_RE.test(work)) continue;
+    // 3) (전화번호 생략) 단독 라인 제외
+    if (/^\(전화번호 생략\)\s*$/.test(work)) continue;
+    // 4) (개인정보 생략)로 시작하는 라인 제외
+    if (/^\(개인정보 생략\)/.test(work)) continue;
+
+    // 6) 대괄호 시작 라인은 제외 (약 이름 아님)
+    if (/^\[.*\]/.test(work)) continue;
+
     let name = null;
 
-    const parenMatch = clean.match(/^([^*\s][^*]*?)\s*\(([^)]+)\)\s*_?\s*\(?:([^)]*)\)?$/);
-    if (parenMatch) {
-      name = parenMatch[1].trim();
-      if (name && name.length >= 2 && !SKIP_RE.test(name)) {
+    // (가) 약 이름 후보: 이름(성분)_(규격) — 제일 강한 패턴
+    const strongParenRe = /^([^\s(]+)\s*\(([^)]+)\)\s*_\s*\(([^)]+)\)\s*(.*)$/i;
+    const sm = strongParenRe.exec(work);
+    if (sm) {
+      name = sm[1].trim();
+      if (name && name.length >= 2 && !LABEL_RE.test(name) && !/제약$/.test(name) && PHONE_IN_PAREN_RE.test("(" + sm[2] + ")") === false) {
         out.push({ name, raw: clean });
         continue;
       }
     }
 
-    const bracketMatch = clean.match(/^\[([^\]]+)\]\s*(.+)$/);
-    if (bracketMatch) {
-      const rest = bracketMatch[2].trim();
-      if (rest && rest.length >= 2 && !SKIP_RE.test(rest)) {
-        out.push({ name: rest, raw: clean });
+    // (나) 일반 괄호 패턴: 이름(성분) — 단, 전화번호/설명문 제외
+    const weakParenRe = /^([^\s(]+)\s*\(([^)]+)\)\s*(.*)$/;
+    const wp = weakParenRe.exec(work);
+    if (wp) {
+      const before = wp[1].trim();
+      const parenContent = wp[2];
+      const after = wp[3].trim();
+      if (PHONE_IN_PAREN_RE.test("(" + parenContent + ")")) continue;
+      if (parenContent.length > 12 && !FORM_RE.test(parenContent) && !/\d/.test(parenContent)) continue;
+      if (/^\[.*\]/.test(after)) continue;
+      name = before;
+      if (name && name.length >= 2 && !LABEL_RE.test(name) && !/제약$/.test(name)) {
+        out.push({ name, raw: clean });
         continue;
       }
     }
 
-    const stripped = clean.replace(/^[\*]+/, "").trim();
-    if (stripped && stripped.length >= 2 && !SKIP_RE.test(stripped)) {
-      if (!/^\d+(\s+\d+)*$/.test(stripped) && !/^\d+/.test(stripped)) {
-        out.push({ name: stripped, raw: clean });
-        continue;
-      }
+    // (라) 약 이름 후보: 제형명 + 숫자/단위 포함, 길이 제한
+    if (FORM_RE.test(work) && /\d/.test(work) && !LABEL_RE.test(work) && work.length >= 3 && work.length <= 30) {
+      name = work;
+      out.push({ name, raw: clean });
+      continue;
+    }
+
+    // (마) 일반 라인 필터
+    if (work.length < 3) continue;
+    if (/^\d/.test(work)) continue;
+    if (INGREDIENT_ONLY_RE.test(work)) continue;
+    // 설명문이 너무 긴 라인(>50자)은 약 이름 후보에서 제외
+    if (work.length > 50 && !FORM_RE.test(work)) continue;
+
+    // (바) 남은 라인 중 약 이름 후보 (길이 제한)
+    if (work.length <= 40 && !LABEL_RE.test(work)) {
+      name = work;
+      out.push({ name, raw: clean });
     }
   }
 
@@ -78,7 +124,7 @@ function extractMedDraft(text) {
       dedup.push(item);
     }
   }
-  return dedup.slice(0, 50);
+  return dedup.slice(0, 20);
 }
 
 function callUpstage(body, filename) {
