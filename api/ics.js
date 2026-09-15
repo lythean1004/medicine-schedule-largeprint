@@ -125,7 +125,8 @@ module.exports = async function handler(req, res) {
 
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/calendar;charset=utf-8");
-      res.setHeader("Content-Disposition", "attachment; filename=\"약먹는시간표.ics\"");
+      // Content-Disposition 헤더의 filename에 한글이 있으면 Node.js에서 invalid character 오류 발생
+      // 프론트에서 a.download로 파일명을 지정하므로 서버 헤더는 생략
       res.end(ics);
     } catch (e) {
       res.statusCode = 400;

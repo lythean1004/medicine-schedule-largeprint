@@ -928,9 +928,11 @@
           const canvas = await html2canvas(cardEl, {
             scale: 2,
             useCORS: true,
-            backgroundColor: "#ffffff"
-          });
-          const blob = await new Promise((resolve) => {
+            backgroundColor: "#ffffff",
+            windowWidth: cardEl.scrollWidth,
+            windowHeight: cardEl.scrollHeight,
+            logging: false
+          });          const blob = await new Promise((resolve) => {
             canvas.toBlob((b) => resolve(b), "image/png");
           });
           if (!blob) {
@@ -969,9 +971,11 @@
           const canvas = await html2canvas(cardEl, {
             scale: 2,
             useCORS: true,
-            backgroundColor: "#ffffff"
-          });
-          const imgData = canvas.toDataURL("image/png");
+            backgroundColor: "#ffffff",
+            windowWidth: cardEl.scrollWidth,
+            windowHeight: cardEl.scrollHeight,
+            logging: false
+          });          const imgData = canvas.toDataURL("image/png");
           const { jsPDF } = window.jspdf;
           const pdf = new jsPDF({
             orientation: "landscape",
