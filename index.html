@@ -319,10 +319,16 @@
         <div class="choice-panel">
           <div class="card" id="result-card"></div>
           <div class="actions">
+            <div style="margin-bottom:10px;">
+              <label style="font-size:14px; color:#555; display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
+              <input id="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:14px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; width:220px;" />
+            </div>
             <button id="btn-save-png" type="button">카드 PNG 저장</button>
             <button id="btn-save-pdf" type="button">PDF 저장</button>
             <button id="btn-copy-html" type="button">카드 화면 복사</button>
-            <button id="btn-share-link" type="button">공유 링크 만들기</button>
+            <button id="btn-share-link" type="button">공유 링크 복사</button>
+            <button id="btn-mailto" type="button">메일 앱 열기(mailto:)</button>
+            <button id="btn-gmail" type="button">Gmail로 PNG 첨부 발송(연결 필요)</button>
             <button id="btn-ics" type="button">달력 ICS 저장</button>
           </div>
           <div id="result-meta" class="result-meta"></div>
@@ -1032,6 +1038,82 @@
           }
         } catch (e) {
           toastShow("공유 링크 만들기 중 오류가 났어요");
+        }
+      });
+
+      // 메일 앱 열기 (mailto:)
+      const btnMailto = $("#btn-mailto");
+      const mailRecipient = $("#mail-recipient");
+      const MAIL_SUBJECT = "약봉투 크게해서 보내드려요~";
+      const MAIL_BODY = "오늘 먹을 약 큰 글씨 카드예요. 첨부 파일을 확인해 주세요.";
+
+      btnMailto.addEventListener("click", () => {
+        const recipient = mailRecipient.value.trim();
+        const params = [];
+        if (recipient) params.push("to=" + encodeURIComponent(recipient));
+        params.push("subject=" + encodeURIComponent(MAIL_SUBJECT));
+        params.push("body=" + encodeURIComponent(MAIL_BODY));
+        const mailto = "mailto:?" + params.join("&");
+        window.location.href = mailto;
+      });
+
+      // Gmail PNG 첨부 발송 (Composio Gmail 연결 필요)
+      const btnGmail = $("#btn-gmail");
+      btnGmail.addEventListener("click", async () => {
+        try {
+          if (!confirmed.length) {
+            toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
+            return;
+          }
+          // 결과 카드 PNG 생성
+          const cardEl = document.querySelector("#result-card");
+          if (!cardEl) { toastShow("카드 화면이 없어요"); return; }
+          if (typeof html2canvas === "undefined") {
+            toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
+            return;
+          }
+          const canvas = await html2canvas(cardEl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            windowWidth: cardEl.scrollWidth,
+            windowHeight: cardEl.scrollHeight,
+            logging: false
+          });
+          const blob = await new Promise((resolve) => {
+            canvas.toBlob((b) => resolve(b), "image/png");
+          });
+          if (!blob) { toastShow("PNG 생성에 실패했어요"); return; }
+
+          const recipient = mailRecipient.value.trim();
+          // composio_execute로 Gmail 전송 시도 (연결 필요)
+          try {
+            const result = await composio_execute({
+              tool: "GMAIL_SEND_EMAIL",
+              args: {
+                to: recipient || "",
+                subject: MAIL_SUBJECT,
+                body: MAIL_BODY,
+                attachments: [{
+                  content: await blob.text(),
+                  filename: "약먹는시간표_카드.png",
+                  mimeType: "image/png"
+                }]
+              }
+            });
+            toastShow("Gmail로 발송 완료");
+          } catch (composeErr) {
+            // Gmail 미연결 또는 전송 실패
+            const msg = composeErr && composeErr.message ? composeErr.message : "Gmail 연결이 필요합니다";
+            toastShow("Gmail 발송 실패: " + msg + " (커넥터 탭에서 Gmail을 연결해 주세요)");
+            // 대안: mailto:로 안내
+            const mailto = recipient
+              ? `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(MAIL_BODY)}`
+              : `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(MAIL_BODY)}`;
+            window.location.href = mailto;
+          }
+        } catch (e) {
+          toastShow("Gmail 발송 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
       });
 
