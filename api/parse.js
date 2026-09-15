@@ -109,7 +109,7 @@ function extractMedDraft(text) {
     if (work.length > 50 && !FORM_RE.test(work)) continue;
 
     // (바) 남은 라인 중 약 이름 후보 (길이 제한)
-    if (work.length <= 40 && !LABEL_RE.test(work)) {
+    if (work.length <= 30 && FORM_RE.test(work) && /\d/.test(work) && !LABEL_RE.test(work)) {
       name = work;
       out.push({ name, raw: clean });
     }
