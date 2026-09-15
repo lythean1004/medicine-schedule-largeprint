@@ -28,7 +28,7 @@
       -webkit-font-smoothing: antialiased;
     }
     .wrap {
-      max-width: 860px;
+      max-width: 980px;
       margin: 0 auto;
       padding: 28px 20px 44px;
     }
@@ -941,10 +941,22 @@
     }
     #result-area .actions { margin-top: auto; }
     #result-area .two-col {
-      grid-template-columns: 30% 70%;
+      grid-template-columns: 28% 72%;
     }
     #result-area .photo-panel {
-      min-height: 200px;
+      min-height: 240px;
+    }
+
+    #confirm-area .two-col {
+      grid-template-columns: 42% 58%;
+    }
+    #confirm-area .photo-panel {
+      min-height: 400px;
+    }
+    #confirm-area .photo-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     #result-area .photo-panel img {
       width: 100%;
@@ -1190,7 +1202,6 @@
       const btnReset = $("#btn-reset");
       const confirmStatus = $("#confirm-status");
       const resultArea = $("#result-area");
-      const resultCard = $("#result-card");
       const resultPhoto = $("#result-photo");
       const resultMeta = $("#result-meta");
       const shareHost = $("#share-host");
@@ -1867,6 +1878,16 @@
             tmp.appendChild(block);
           }
         });
+        // tmp를 body에 잠시 붙여서 레이아웃 확보 (html2canvas가 차원 읽을 수 있게)
+        tmp.style.position = "absolute";
+        tmp.style.left = "-9999px";
+        tmp.style.top = "0";
+        document.body.appendChild(tmp);
+        // 스크롤/레이아웃 강제
+        const w = tmp.offsetWidth || 600;
+        const h = tmp.offsetHeight || 400;
+        tmp.style.width = w + "px";
+        tmp.style.height = h + "px";
         return tmp;
       }
 
@@ -1886,10 +1907,12 @@
             scale: 2,
             useCORS: true,
             backgroundColor: "#ffffff",
-            windowWidth: container.scrollWidth,
-            windowHeight: container.scrollHeight,
             logging: false
           });
+          // 캡쳐 후 body에서 제거
+          if (container && container.parentNode) {
+            container.parentNode.removeChild(container);
+          }
           const blob = await new Promise((resolve) => {
             canvas.toBlob((b) => resolve(b), "image/png");
           });
@@ -1993,12 +2016,17 @@
 
               const container = document.createElement("div");
               container.innerHTML = html;
+              container.style.position = "absolute";
+              container.style.left = "-9999px";
+              container.style.top = "0";
+              document.body.appendChild(container);
               const canvas = await html2canvas(container, {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false
               });
+              if (container.parentNode) container.parentNode.removeChild(container);
               const imgData = canvas.toDataURL("image/png");
               const mmPerPx = 0.264583;
               const width_mm = Math.ceil(canvas.width * mmPerPx);
@@ -2020,10 +2048,9 @@
               scale: 2,
               useCORS: true,
               backgroundColor: "#ffffff",
-              windowWidth: container.scrollWidth,
-              windowHeight: container.scrollHeight,
               logging: false
             });
+            if (container && container.parentNode) container.parentNode.removeChild(container);
             const imgData = canvas.toDataURL("image/png");
             const { jsPDF } = window.jspdf;
             const mmPerPx = 0.264583;
@@ -2048,6 +2075,7 @@
         const scope = getSaveScope();
         const container = renderScopedCards(scope);
         const full = container.outerHTML;
+        if (container && container.parentNode) container.parentNode.removeChild(container);
         navigator.clipboard
           .writeText(full)
           .then(() => toastShow("카드 HTML을 복사했어요"))
@@ -2135,20 +2163,23 @@
 
       async function doGmail() {
         try {
-          const cardEl = document.querySelector("#result-card");
-          if (!cardEl) { toastShow("카드 화면이 없어요"); return; }
+          if (!confirmed.length) {
+            toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
+            return;
+          }
           if (typeof html2canvas === "undefined") {
             toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
             return;
           }
-          const canvas = await html2canvas(cardEl, {
+          const scope = getSaveScope();
+          const container = renderScopedCards(scope);
+          const canvas = await html2canvas(container, {
             scale: 2,
             useCORS: true,
             backgroundColor: "#ffffff",
-            windowWidth: cardEl.scrollWidth,
-            windowHeight: cardEl.scrollHeight,
             logging: false
           });
+          if (container && container.parentNode) container.parentNode.removeChild(container);
           const blob = await new Promise((resolve) => {
             canvas.toBlob((b) => resolve(b), "image/png");
           });
@@ -2203,35 +2234,41 @@
           .catch(() => toastShow("공유 링크 만들기 중 오류가 났어요"));
       }
 
-      function doPngDownload() {
-        const cardEl = document.querySelector("#result-card");
-        if (!cardEl) { toastShow("카드 화면이 없어요"); return; }
-        if (typeof html2canvas === "undefined") {
-          toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
-          return;
-        }
-        html2canvas(cardEl, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          windowWidth: cardEl.scrollWidth,
-          windowHeight: cardEl.scrollHeight,
-          logging: false
-        }).then((canvas) => {
-          const blob = new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
-          blob.then((b) => {
-            if (!b) { toastShow("PNG 생성에 실패했어요"); return; }
-            const url = URL.createObjectURL(b);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "약먹는시간표_카드.png";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-            toastShow("PNG 다운로드 완료");
+      async function doPngDownload() {
+        try {
+          if (!confirmed.length) {
+            toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
+            return;
+          }
+          if (typeof html2canvas === "undefined") {
+            toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
+            return;
+          }
+          const scope = getSaveScope();
+          const container = renderScopedCards(scope);
+          const canvas = await html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false
           });
-        }).catch(() => toastShow("PNG 다운로드 중 오류가 났어요"));
+          if (container && container.parentNode) container.parentNode.removeChild(container);
+          const blob = await new Promise((resolve) => {
+            canvas.toBlob((b) => resolve(b), "image/png");
+          });
+          if (!blob) { toastShow("PNG 생성에 실패했어요"); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "약먹는시간표_" + ({all:"전체", morning:"아침", lunch:"점심", dinner:"저녁", bedtime:"자기전", other:"메모"}[scope] || "카드") + ".png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 100);
+          toastShow("PNG 다운로드 완료");
+        } catch (e) {
+          toastShow("PNG 다운로드 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
+        }
       }
 
       btnIcs.addEventListener("click", async () => {
