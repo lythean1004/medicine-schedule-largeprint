@@ -18,12 +18,24 @@ const PHONE_RE = /\b0\d{1,2}-\d{3,4}-\d{4}\b/g;
 const COMPANY_RE = /\((?:주|사|의료재단|병원|약국|의원)\)/g;
 const COMPANY_FULL_RE = /\b(?:주식회사|재단법인|사단법인)\b/gi;
 
+// 환자 이름, 주소 개인정보 패턴 (PRD 완전 준수 보강)
+const PATIENT_HONOR_RE = /(?:환자|귀하|고객|회원|보호자|어르신)\s*[가-힣]{2,4}/g;
+const PATIENT_PAREN_RE = /\([가-힣]{2,4}\)(?:\s*님)?/g;
+const ADDRESS_ROAD_RE = /[가-힣]+로\s+[0-9]+(?:길\s+[0-9]+)?/g;
+const ADDRESS_JIBEON_RE = /[가-힣]+동\s+[0-9]+(?:-[0-9]+)?\s*번지/g;
+const ADDRESS_DETAIL_RE = /[가-힣]+로\s+[0-9]+(?:-[0-9]+)?/g;
+
 function sanitizeForDraft(text) {
   if (!text) return text;
   let s = text
     .replace(PHONE_RE, "(전화번호 생략)")
     .replace(COMPANY_RE, "(개인정보 생략)")
-    .replace(COMPANY_FULL_RE, "(개인정보 생략)");
+    .replace(COMPANY_FULL_RE, "(개인정보 생략)")
+    .replace(PATIENT_HONOR_RE, "(환자명 생략)")
+    .replace(PATIENT_PAREN_RE, "(환자명 생략)")
+    .replace(ADDRESS_ROAD_RE, "(주소 생략)")
+    .replace(ADDRESS_JIBEON_RE, "(주소 생략)")
+    .replace(ADDRESS_DETAIL_RE, "(주소 생략)");
   return s;
 }
 
