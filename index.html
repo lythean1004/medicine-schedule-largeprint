@@ -46,6 +46,7 @@
     }
     input[type="file"] { font-size: 14px; }
 
+    /* 카드형 시간표 */
     .card {
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -68,6 +69,7 @@
     }
     .slot .empty { color: #777; font-size: 18px; }
 
+    /* 약 한 줄 */
     .med-row {
       font-size: 20px;
       padding: 8px 0;
@@ -80,35 +82,44 @@
     .med-row .name { flex: 1 1 100%; font-weight: 700; }
     .med-row .meta { color: #333; }
 
+    /* 보호자 확인 */
     .confirm-list { margin-top: 12px; }
     .confirm-item {
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px;
-      margin-top: 8px;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 10px;
       background: #fff;
     }
     .confirm-item .ck {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .confirm-item label {
-      font-size: 18px;
+      font-size: 19px;
       cursor: pointer;
     }
     .confirm-item .fields {
       margin-top: 8px;
-      font-size: 16px;
+      font-size: 17px;
     }
     .confirm-item input[type="text"],
     .confirm-item input[type="number"] {
-      font-size: 16px;
-      padding: 6px 8px;
+      font-size: 17px;
+      padding: 7px 9px;
       border: 1px solid var(--line);
       border-radius: 6px;
-      width: 120px;
+      width: 100%;
+      max-width: 240px;
+      box-sizing: border-box;
+    }
+    .confirm-item .time-row {
+      display: inline-block;
+      margin-right: 14px;
+      margin-bottom: 4px;
+      font-size: 18px;
     }
     .missing textarea,
     .missing input,
@@ -156,7 +167,7 @@
     /* 2열 레이아웃: 사진(왼쪽 고정) + 선택/결과(오른쪽) */
     .two-col {
       display: grid;
-      grid-template-columns: minmax(260px, 320px) 1fr;
+      grid-template-columns: minmax(300px, 380px) 1fr;
       gap: 16px;
       align-items: start;
     }
@@ -165,7 +176,7 @@
       border-radius: 8px;
       padding: 8px;
       background: #fff;
-      min-height: 200px;
+      min-height: 240px;
     }
     .photo-panel img {
       width: 100%;
@@ -174,18 +185,18 @@
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #f5f5f5;
-      max-height: 460px;
+      max-height: 540px;
       object-fit: contain;
     }
     .photo-panel .photo-cap {
       font-size: 13px;
       color: #555;
-      margin: 6px 0 0;
+      margin: 8px 0 0;
     }
     .choice-panel { min-width: 0; }
     @media (max-width: 560px) {
       .two-col { grid-template-columns: 1fr; }
-      .photo-panel { max-width: 300px; margin: 0 auto; }
+      .photo-panel { max-width: 320px; }
     }
 
     @media print {
@@ -268,20 +279,6 @@
       </div>
     </section>
 
-    <section class="step hidden" id="parse-error-detail">
-      <div class="card" style="border-color:var(--red); background:#fff5f5;">
-        <h2 style="color:var(--red);">글자 읽기 상세 오류 (개발 확인용)</h2>
-        <div id="parse-error-kind" style="font-size:16px; margin-top:8px;"></div>
-        <div id="parse-error-body" style="margin-top:8px; font-size:14px;"></div>
-        <div style="margin-top:12px; max-height:320px; overflow:auto;">
-          <pre id="parse-error-data" style="background:#fafafa; border:1px solid var(--line); padding:10px; font-size:12px;"></pre>
-        </div>
-        <div style="margin-top:10px;">
-          <button id="btn-error-close" type="button" style="font-size:14px;">닫기</button>
-        </div>
-      </div>
-    </section>
-
     <div id="start-empty" class="step">
       <p>정리할 약봉투 사진을 올려 주세요.</p>
     </div>
@@ -293,12 +290,14 @@
     (function () {
       "use strict";
 
-      let fileBlob = null;
-      let rotatedBlob = null;
-      let ocrText = "";
-      let medDraft = [];
-      let confirmed = [];
+      // 상태
+      let fileBlob = null;       // 회전 전 원본
+      let rotatedBlob = null;    // 사용자가 확정한 회전본
+      let ocrText = "";          // OCR 원문
+      let medDraft = [];         // 약 이름 초안 [{name, raw}]
+      let confirmed = [];        // 보호자가 확정한 항목 [{name, timeslots, dose, when, days, note}]
 
+      // DOM refs
       const $ = (s) => document.querySelector(s);
       const fileInput = $("#file-input");
       const btnRetake = $("#btn-retake");
@@ -311,12 +310,14 @@
       const parseStatus = $("#parse-status");
       const confirmArea = $("#confirm-area");
       const confirmList = $("#confirm-list");
+      const confirmPhoto = $("#confirm-photo");
       const btnConfirm = $("#btn-confirm");
       const btnEdit = $("#btn-edit");
       const btnReset = $("#btn-reset");
       const confirmStatus = $("#confirm-status");
       const resultArea = $("#result-area");
       const resultCard = $("#result-card");
+      const resultPhoto = $("#result-photo");
       const resultMeta = $("#result-meta");
       const shareHost = $("#share-host");
       const btnSavePng = $("#btn-save-png");
@@ -326,15 +327,7 @@
       const btnIcs = $("#btn-ics");
       const toast = $("#toast");
 
-      const confirmPhoto = $("#confirm-photo");
-      const resultPhoto = $("#result-photo");
-
-      const parseErrorDetail = $("#parse-error-detail");
-      const parseErrorKind = $("#parse-error-kind");
-      const parseErrorBody = $("#parse-error-body");
-      const parseErrorData = $("#parse-error-data");
-      const btnErrorClose = $("#btn-error-close");
-
+      // 영역 전환
       function showOnly(shows) {
         const all = [
           "upload-area", "confirm-area", "result-area", "start-empty"
@@ -361,39 +354,7 @@
         setTimeout(() => toast.classList.remove("show"), 2200);
       }
 
-      function showParseError(data, context) {
-        if (!parseErrorDetail) return;
-        let kind = "알 수 없음";
-        let body = "";
-        if (context && context.httpStatus != null) {
-          kind = "HTTP 오류";
-          body = "상태 코드: " + context.httpStatus;
-          if (context.httpStatusText) body += " / " + context.httpStatusText;
-          if (context.serverError) body += "\n서버 message: " + context.serverError;
-        } else if (context && context.errorMessage) {
-          kind = "네트워크/예외";
-          body = context.errorMessage;
-        } else if (data && typeof data === "object" && data.error) {
-          kind = "서버 response error";
-          body = "서버 응답 error: " + data.error;
-        }
-        if (parseErrorKind) parseErrorKind.textContent = kind;
-        if (parseErrorBody) parseErrorBody.textContent = body;
-        if (parseErrorData) {
-          try {
-            parseErrorData.textContent = JSON.stringify(data, null, 2);
-          } catch (e) {
-            parseErrorData.textContent = String(data);
-          }
-        }
-        parseErrorDetail.classList.remove("hidden");
-        // 화면 흐름을 해치지 않도록 상단 상태도 함께 남겨 둔다
-        if (parseStatus) {
-          parseStatus.textContent = "글자 읽기에서 오류가 났어요. 아래 상세 내용을 확인해 주세요.";
-        }
-        toastShow("글자 읽기 오류. 아래 상세에서 전체 응답(data)을 확인해 주세요.");
-      }
-
+      // 파일 읽기
       function readFileAsDataURL(blob) {
         return new Promise((resolve, reject) => {
           const r = new FileReader();
@@ -403,16 +364,6 @@
         });
       }
 
-      async function setPhoto(imgEl, blob) {
-        if (!imgEl || !blob) return;
-        try {
-          const url = await readFileAsDataURL(blob);
-          imgEl.src = url;
-        } catch (e) {
-          imgEl.src = "";
-        }
-      }
-
       function readFileAsBlob(inputEl) {
         return new Promise((resolve, reject) => {
           if (!inputEl.files || !inputEl.files[0]) {
@@ -420,11 +371,13 @@
             return;
           }
           const b = inputEl.files[0];
+          // 회전 필요 판단을 위해 blob 유지
           fileBlob = b;
           resolve(b);
         });
       }
 
+      // 방향 맞추기용 캔버스 초기화: 현재 blob을 그대로 그림
       let rotationDeg = 0;
 
       async function openCropView() {
@@ -456,6 +409,7 @@
         img.src = url;
         return new Promise((resolve) => {
           img.onload = () => {
+            // 회전된 결과를 blob으로 저장
             const c = document.createElement("canvas");
             c.width = cropCanvas.width;
             c.height = cropCanvas.height;
@@ -475,7 +429,6 @@
         await applyRotation();
         cropHost.classList.add("hidden");
         toastShow("방향을 맞췄어요");
-        await parseAfterCrop();
       });
 
       btnCropReset.addEventListener("click", async () => {
@@ -492,11 +445,11 @@
         ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
       });
 
+      // 사진 올리기
       fileInput.addEventListener("change", async () => {
         try {
           await readFileAsBlob(fileInput);
           btnRetake.classList.remove("hidden");
-          await openCropView();
           showOnly("upload");
           toastShow("사진을 올렸어요");
         } catch (e) {
@@ -525,6 +478,7 @@
         showOnly("start");
       });
 
+      // parse 호출
       btnParse.addEventListener("click", async () => {
         const imgBlob = rotatedBlob || fileBlob;
         if (!imgBlob) {
@@ -542,11 +496,7 @@
           });
           const data = await res.json();
           if (!res.ok) {
-            showParseError(data, {
-              httpStatus: res.status,
-              httpStatusText: res.statusText,
-              serverError: data && data.error
-            });
+            parseStatus.textContent = "글자 읽기 실패: " + (data.error || res.statusText);
             return;
           }
           ocrText = data.text || "";
@@ -557,76 +507,21 @@
           parseStatus.textContent = "글자 읽기 완료";
           toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
         } catch (e) {
-          showParseError(null, {
-            errorMessage: "네트워크 오류가 났어요: " + (e && e.message ? e.message : String(e))
-          });
+          parseStatus.textContent = "네트워크 오류가 났어요";
           toastShow("다시 시도해 주세요");
         } finally {
           btnParse.disabled = false;
         }
       });
 
-      async function parseAfterCrop() {
-        const imgBlob = rotatedBlob || fileBlob;
-        if (!imgBlob) {
-          toastShow("사진이 없어요");
-          return;
-        }
-        btnParse.disabled = true;
-        parseStatus.textContent = "글자를 읽고 있어요…";
-        try {
-          const form = new FormData();
-          form.append("file", imgBlob, "photo.jpg");
-          const res = await fetch("/api/parse", {
-            method: "POST",
-            body: form
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            showParseError(data, {
-              httpStatus: res.status,
-              httpStatusText: res.statusText,
-              serverError: data && data.error
-            });
-            return;
-          }
-          ocrText = data.text || "";
-          medDraft = data.meds || [];
-          await setPhoto(confirmPhoto, imgBlob);
-          buildConfirmView();
-          showOnly("confirm");
-          parseStatus.textContent = "글자 읽기 완료";
-          toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
-        } catch (e) {
-          showParseError(null, {
-            errorMessage: "네트워크 오류가 났어요: " + (e && e.message ? e.message : String(e))
-          });
-          toastShow("다시 시도해 주세요");
-        } finally {
-          btnParse.disabled = false;
-        }
-      }
-
+      // -------------------------------------------------------------
+      // 보호자 확인 화면 구성
+      // -------------------------------------------------------------
       function buildConfirmView() {
-        if (!confirmList) return;
         confirmList.innerHTML = "";
-        // 기존 약 박스가 남아 있으면 다시 제거
-        confirmList.querySelectorAll(".confirm-item").forEach((el) => el.remove());
-        const rawList = medDraft.length ? medDraft : [];
-        // 같은 약 이름이 중복으로 들어오면 박스가 반복될 수 있어,
-        // 이름 기준으로 처음 나온 항목만 남긴다.
-        const seen = new Set();
-        const deduped = [];
-        for (const m of rawList) {
-          const key = m && m.name ? String(m.name).trim() : "";
-          if (key && !seen.has(key)) {
-            seen.add(key);
-            deduped.push(m);
-          } else if (!key) {
-            deduped.push(m);
-          }
-        }
-        const list = deduped.length ? deduped : [];
+        // medDraft가 없으면 직접 입력한 약 이름 목록을 유지할 수 있도록
+        // 현재는 OCR 약 이름 초안을 기반으로 확인 칸을 만든다.
+        const list = medDraft.length ? medDraft : [];
         if (!list.length) {
           confirmList.innerHTML =
             '<div class="confirm-item missing"><div class="label-missing">약 이름 초안이 안 보여요.</div>' +
@@ -637,34 +532,35 @@
           item.className = "confirm-item";
           item.dataset.name = m.name;
 
-          const nameEl = document.createElement("div");
-          nameEl.style.fontSize = "22px";
-          nameEl.style.fontWeight = "700";
-          nameEl.style.marginBottom = "8px";
-          nameEl.style.borderBottom = "2px solid var(--ink)";
-          nameEl.style.paddingBottom = "4px";
-          nameEl.textContent = m.name || "(약 이름 없음)";
-
-          item.appendChild(nameEl);
+          const ck = document.createElement("div");
+          ck.className = "ck";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.id = "ck-" + escapedId(m.name);
+          const lbl = document.createElement("label");
+          lbl.htmlFor = cb.id;
+          lbl.textContent = "확인 완료";
+          ck.appendChild(cb);
+          ck.appendChild(lbl);
 
           const body = document.createElement("div");
           body.className = "fields";
 
           // 시간대 체크 (아침/점심/저녁/자기 전)
           const timeGroup = document.createElement("div");
+          timeGroup.className = "time-group";
           timeGroup.style.marginTop = "6px";
           const slots = ["아침", "점심", "저녁", "자기 전"];
           slots.forEach((s) => {
             const row = document.createElement("label");
-            row.style.display = "block";
-            row.style.fontSize = "17px";
-            row.style.marginBottom = "4px";
+            row.className = "time-row";
             const cb2 = document.createElement("input");
             cb2.type = "checkbox";
             cb2.value = s;
             cb2.name = "time-" + escapedId(m.name);
+            const txt = document.createTextNode(" " + s);
             row.appendChild(cb2);
-            row.appendChild(document.createTextNode(" " + s));
+            row.appendChild(txt);
             timeGroup.appendChild(row);
           });
           body.appendChild(timeGroup);
@@ -717,25 +613,12 @@
           body.appendChild(row3);
           body.appendChild(row4);
 
-          // 보호자 확인 완료 체크박스 (약 박스 가장 아래)
-          const ckBottom = document.createElement("div");
-          ckBottom.style.marginTop = "10px";
-          ckBottom.style.paddingTop = "8px";
-          ckBottom.style.borderTop = "1px solid var(--line)";
-          const cbBottom = document.createElement("input");
-          cbBottom.type = "checkbox";
-          cbBottom.id = "ck-bottom-" + escapedId(m.name);
-          const lblBottom = document.createElement("label");
-          lblBottom.htmlFor = cbBottom.id;
-          lblBottom.textContent = "보호자 확인 완료";
-          ckBottom.appendChild(cbBottom);
-          ckBottom.appendChild(lblBottom);
-          body.appendChild(ckBottom);
-
+          item.appendChild(ck);
           item.appendChild(body);
           confirmList.appendChild(item);
         });
 
+        // 미입력 빨간 칸 표시
         markMissing();
       }
 
@@ -745,11 +628,14 @@
 
       function markMissing() {
         confirmList.querySelectorAll(".confirm-item").forEach((item) => {
-          const bottomCheckbox = item.querySelector('#ck-bottom-' + escapedId(item.dataset.name));
-          const bottomChecked = bottomCheckbox ? bottomCheckbox.checked : false;
+          const checkboxes = item.querySelectorAll('input[type="checkbox"]');
           const textInputs = item.querySelectorAll('input[type="text"]');
+          const checked = Array.from(checkboxes).some((c) => c.checked);
           const anyBlank = Array.from(textInputs).some((t) => !t.value.trim());
-          if (!bottomChecked || anyBlank) {
+          // 시간대 체크가 하나라도 되어 있으면 "입력됨"으로 간주하되,
+          // 보호자 확인을 위해 모든 체크박스/입력칸이 비어있으면 붉은 칸 경고를 남긴다.
+          const hasAnyInput = checked || Array.from(textInputs).some((t) => t.value.trim());
+          if (!hasAnyInput) {
             item.classList.add("missing");
           } else {
             item.classList.remove("missing");
@@ -757,22 +643,38 @@
         });
       }
 
+      // 실시간 미입력 감지
       confirmList.addEventListener("change", markMissing);
       confirmList.addEventListener("input", markMissing);
 
+      // -------------------------------------------------------------
+      // 보호자 확인 완료: overwrite
+      // -------------------------------------------------------------
       btnConfirm.addEventListener("click", () => {
         const items = confirmList.querySelectorAll(".confirm-item");
         const next = [];
         let anyChecked = false;
+        const timeRequired = ["아침", "점심", "저녁"];
+        let blockNames = [];
+
         items.forEach((item) => {
           const name = item.dataset.name || "(이름 없음)";
-          const bottomCheckbox = item.querySelector('#ck-bottom-' + escapedId(name));
-          const checked = bottomCheckbox ? bottomCheckbox.checked : false;
+          const cb = item.querySelector('input[type="checkbox"]');
+          const checked = cb ? cb.checked : false;
           anyChecked = anyChecked || checked;
 
+          // 시간대 체크박스
           const timeValues = Array.from(
             item.querySelectorAll('input[name^="time-"]:checked')
           ).map((c) => c.value);
+
+          // 보호자가 확인 완료 체크한 박스는 아침·점심·저녁 중 최소 1개를 선택해야 진행 가능
+          if (checked) {
+            const hasRequiredTime = timeRequired.some((t) => timeValues.includes(t));
+            if (!hasRequiredTime) {
+              blockNames.push(name);
+            }
+          }
 
           const doseInput = item.querySelector('input[data-field="dose"]');
           const whenInput = item.querySelector('input[data-field="when"]');
@@ -790,15 +692,26 @@
           });
         });
 
+        if (blockNames.length) {
+          const msg = "아침·점심·저녁 중 하나를 선택해 주세요: " + blockNames.join(", ");
+          confirmStatus.textContent = msg;
+          toastShow("아침·점심·저녁 중 하나를 선택해 주세요");
+          return;
+        }
+
         if (!anyChecked) {
           confirmStatus.textContent = "확인 완료 체크를 하나 이상 눌러 주세요.";
           toastShow("확인 체크를 눌러 주세요");
           return;
         }
 
+        // overwrite: 보호자가 확정한 값만 남긴다.
         confirmed = next.filter((r) => r.checked);
+        // checked=false 항목이라도 보호자가 일부 입력했으면 남길지 여부는
+        // 이번 MVP에서는 "확인 완료된 것만" 최종 시간표에 반영한다.
         confirmStatus.textContent = "보호자 확인 완료로 덮어썼어요";
 
+        setPhoto(resultPhoto, rotatedBlob || fileBlob);
         renderResult();
         showOnly("result");
         toastShow("보호자가 확인한 내용으로 반영했어요");
@@ -809,13 +722,18 @@
         toastShow("수정할 수 있어요");
       });
 
+      // -------------------------------------------------------------
+      // 결과 렌더링 (큰 글씨 시간표)
+      // -------------------------------------------------------------
       function renderResult() {
+        // 시간대별 약 목록
         const slots = { 아침: [], 점심: [], 저녁: [], "자기 전": [] };
-        const others = [];
+        const others = []; // 매일 안 먹는/필요 시 등은 확인 메모로 처리 가능
 
         confirmed.forEach((r) => {
           const times = r.timeslots || [];
           if (!times.length) {
+            // 시간대를 안 고른 경우 "약사님께 확인할 것"에 넣을 수 있음
             if (r.note) others.push({ name: r.name, note: r.note, dose: r.dose, when: r.when, days: r.days });
             return;
           }
@@ -868,6 +786,7 @@
         html += "</div>";
         resultCard.innerHTML = html;
 
+        // 메타 정보
         const total = confirmed.length;
         resultMeta.textContent =
           "보호자가 확인한 약 " + total + "개 반영 / 사진은 저장하지 않았어요";
@@ -901,6 +820,9 @@
           .replace(/'/g, "&#39;");
       }
 
+      // -------------------------------------------------------------
+      // 저장/공유
+      // -------------------------------------------------------------
       btnSavePng.addEventListener("click", async () => {
         try {
           const blob = await fetch("/api/generate-card?format=png", {
@@ -946,6 +868,8 @@
       });
 
       btnCopyHtml.addEventListener("click", () => {
+        const html = resultCard.innerHTML;
+        // 카드 전체 화면을 복사: card 바깥 구조까지 포함한 HTML을 클립보드에 넣는다.
         const cardEl = document.querySelector(".card");
         if (!cardEl) return;
         const full = cardEl.outerHTML;
@@ -1010,10 +934,6 @@
         } catch (e) {
           toastShow("ICS 저장 중 오류가 났어요");
         }
-      });
-
-      btnErrorClose.addEventListener("click", () => {
-        if (parseErrorDetail) parseErrorDetail.classList.add("hidden");
       });
     })();
   </script>
