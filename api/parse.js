@@ -92,7 +92,7 @@ function callUpstage(body, filename) {
     const bodyParts = [];
     bodyParts.push("--" + boundary);
     bodyParts.push(
-      'Content-Disposition: form-data; name="file"; filename="' + fileName + '"'
+      'Content-Disposition: form-data; name="document"; filename="' + fileName + '"'
     );
     bodyParts.push('Content-Type: image/jpeg');
     bodyParts.push("");
@@ -101,10 +101,6 @@ function callUpstage(body, filename) {
     bodyParts.push('Content-Disposition: form-data; name="model"');
     bodyParts.push("");
     bodyParts.push(OCR_MODEL);
-    bodyParts.push("--" + boundary);
-    bodyParts.push('Content-Disposition: form-data; name="outputs"');
-    bodyParts.push("");
-    bodyParts.push('{"type":"json"}');
     bodyParts.push("--" + boundary + "--");
     bodyParts.push("");
 
