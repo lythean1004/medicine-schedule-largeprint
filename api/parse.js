@@ -89,23 +89,28 @@ function callUpstage(body, filename) {
     const fileBuf = body;
     const fileName = filename || "photo.jpg";
 
-    const bodyParts = [];
-    bodyParts.push("--" + boundary);
-    bodyParts.push(
-      'Content-Disposition: form-data; name="document"; filename="' + fileName + '"'
-    );
-    bodyParts.push('Content-Type: image/jpeg');
-    bodyParts.push("");
-    bodyParts.push(fileBuf);
-    bodyParts.push("--" + boundary);
-    bodyParts.push('Content-Disposition: form-data; name="model"');
-    bodyParts.push("");
-    bodyParts.push(OCR_MODEL);
-    bodyParts.push("--" + boundary + "--");
-    bodyParts.push("");
+    const lines = [
+      "--" + boundary,
+      'Content-Disposition: form-data; name="document"; filename="' + fileName + '"',
+      "Content-Type: image/jpeg",
+      "",
+      "",
+      "--" + boundary,
+      'Content-Disposition: form-data; name="model"',
+      "",
+      OCR_MODEL,
+      "--" + boundary + "--",
+      ""
+    ];
 
+    const fileLineIndex = 4;
     const bodyBuf = Buffer.concat(
-      bodyParts.map((p) => (Buffer.isBuffer(p) ? p : Buffer.from(p || "")))
+      lines.map((line, index) => {
+        if (index === fileLineIndex) {
+          return Buffer.concat([Buffer.from(line + "\r\n"), fileBuf, Buffer.from("\r\n")]);
+        }
+        return Buffer.from(line + "\r\n");
+      })
     );
 
     const options = {
