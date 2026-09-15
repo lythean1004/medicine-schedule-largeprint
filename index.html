@@ -992,21 +992,41 @@
 
       btnIcs.addEventListener("click", async () => {
         try {
+          // 며칠분(days) 수집: 확인된 약들의 days 필드에서 값 수집
+          const daysSet = new Set();
+          confirmed.forEach((r) => {
+            if (r.days) daysSet.add(r.days);
+          });
+          // 대표 days 값: 여러 개면 첫 값, 없으면 기본 30
+          let daysValue = 30;
+          if (daysSet.size) {
+            const first = Array.from(daysSet)[0];
+            const num = parseInt(String(first).replace(/[^0-9]/g, ""), 10);
+            if (!isNaN(num) && num > 0) daysValue = num;
+          }
+
+          const body = {
+            confirmed: confirmed,
+            title: "오늘 먹을 약 (큰 글씨)",
+            daysCount: daysValue
+          };
+
           const res = await fetch("/api/ics", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              confirmed: confirmed,
-              title: "오늘 먹을 약 (큰 글씨)"
-            })
+            body: JSON.stringify(body)
           });
-          const data = await res.json();
           if (!res.ok) {
             toastShow("ICS 생성 실패");
             return;
           }
-          const ics = data.content || "";
-          const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+          // 서버는 ICS 텍스트를 raw로 내려줌 (JSON 아님)
+          const icsText = await res.text();
+          if (!icsText) {
+            toastShow("ICS 내용이 없어요");
+            return;
+          }
+          const blob = new Blob([icsText], { type: "text/calendar;charset=utf-8" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
