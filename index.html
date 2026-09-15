@@ -541,7 +541,10 @@
       }
 
       function buildConfirmView() {
+        if (!confirmList) return;
         confirmList.innerHTML = "";
+        // 기존 약 박스가 남아 있으면 다시 제거
+        confirmList.querySelectorAll(".confirm-item").forEach((el) => el.remove());
         const list = medDraft.length ? medDraft : [];
         if (!list.length) {
           confirmList.innerHTML =
@@ -552,6 +555,14 @@
           const item = document.createElement("div");
           item.className = "confirm-item";
           item.dataset.name = m.name;
+
+          const nameEl = document.createElement("div");
+          nameEl.style.fontSize = "22px";
+          nameEl.style.fontWeight = "700";
+          nameEl.style.marginBottom = "8px";
+          nameEl.style.borderBottom = "2px solid var(--ink)";
+          nameEl.style.paddingBottom = "4px";
+          nameEl.textContent = m.name || "(약 이름 없음)";
 
           const body = document.createElement("div");
           body.className = "fields";
