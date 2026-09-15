@@ -1244,7 +1244,7 @@
             el.classList.toggle("hidden", id !== "result-area");
             setPhoto(resultPhoto, rotatedBlob || fileBlob);
           } else if (shows === "start") {
-            el.classList.toggle("hidden", id !== "start-empty");
+            el.classList.toggle("hidden", id !== "upload-area");
           }
         });
       }
@@ -1411,6 +1411,8 @@
         confirmArea.classList.add("hidden");
         resultArea.classList.add("hidden");
         shareHost.classList.add("hidden");
+        fileInput.value = "";
+        updateFileDisplay();
         showOnly("start");
       });
 
@@ -1423,6 +1425,8 @@
         confirmArea.classList.add("hidden");
         resultArea.classList.add("hidden");
         shareHost.classList.add("hidden");
+        fileInput.value = "";
+        updateFileDisplay();
         showOnly("start");
       });
 
