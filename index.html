@@ -307,6 +307,10 @@
       <div id="crop-host" class="hidden" style="margin-top: 12px;">
         <canvas id="crop-canvas" style="border:1px solid var(--line); max-width:100%; touch-action:none;"></canvas>
         <div style="margin-top:8px;">
+          <button id="btn-crop-rotate-left" type="button">◀ 왼쪽으로 90°</button>
+          <button id="btn-crop-rotate-right" type="button">오른쪽으로 90° ▶</button>
+        </div>
+        <div style="margin-top:6px;">
           <button id="btn-crop-apply" type="button">이 방향으로 사용</button>
           <button id="btn-crop-reset" type="button">돌리기 취소</button>
         </div>
@@ -433,6 +437,8 @@
       const cropCanvas = $("#crop-canvas");
       const btnCropApply = $("#btn-crop-apply");
       const btnCropReset = $("#btn-crop-reset");
+      const btnCropRotateLeft = $("#btn-crop-rotate-left");
+      const btnCropRotateRight = $("#btn-crop-rotate-right");
       const parseStatus = $("#parse-status");
       const confirmArea = $("#confirm-area");
       const confirmList = $("#confirm-list");
@@ -509,6 +515,7 @@
       }
 
       let rotationDeg = 0;
+      let imgCropCache = null;
 
       async function openCropView() {
         if (!fileBlob) {
@@ -525,12 +532,17 @@
         });
         cropCanvas.width = img.naturalWidth;
         cropCanvas.height = img.naturalHeight;
+        imgCropCache = img;
+        drawCropPreview(img);
+        cropHost.classList.remove("hidden");
+      }
+
+      function drawCropPreview(img) {
         const ctx = cropCanvas.getContext("2d");
         ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
         ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
         ctx.rotate((rotationDeg * Math.PI) / 180);
         ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-        cropHost.classList.remove("hidden");
       }
 
       function applyRotation() {
@@ -554,6 +566,19 @@
 
       btnCropOpen.addEventListener("click", openCropView);
 
+      btnCropRotateLeft.addEventListener("click", () => {
+        if (!imgCropCache) return;
+        rotationDeg = (rotationDeg - 90) % 360;
+        if (rotationDeg < 0) rotationDeg += 360;
+        drawCropPreview(imgCropCache);
+      });
+
+      btnCropRotateRight.addEventListener("click", () => {
+        if (!imgCropCache) return;
+        rotationDeg = (rotationDeg + 90) % 360;
+        drawCropPreview(imgCropCache);
+      });
+
       btnCropApply.addEventListener("click", async () => {
         await applyRotation();
         cropHost.classList.add("hidden");
@@ -562,16 +587,7 @@
 
       btnCropReset.addEventListener("click", async () => {
         rotationDeg = 0;
-        const url = await readFileAsDataURL(fileBlob);
-        const img = new Image();
-        await new Promise((resolve) => { img.onload = resolve; img.src = url; });
-        cropCanvas.width = img.naturalWidth;
-        cropCanvas.height = img.naturalHeight;
-        const ctx = cropCanvas.getContext("2d");
-        ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
-        ctx.translate(cropCanvas.width / 2, cropCanvas.height / 2);
-        ctx.rotate(0);
-        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+        drawCropPreview(imgCropCache);
       });
 
       fileInput.addEventListener("change", async () => {
