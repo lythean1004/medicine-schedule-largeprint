@@ -19,7 +19,7 @@
       color: var(--ink);
       background: var(--bg);
     }
-    .wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
+    .wrap { padding: 12px; }
     h1 { font-size: 22px; margin: 0 0 8px; }
     p { margin: 0 0 12px; line-height: 1.5; }
     .note { color: #555; }
@@ -180,20 +180,20 @@
     }
     .toast.show { opacity: 1; }
 
-    /* 2열 레이아웃: 사진(왼쪽 고정) + 선택/결과(오른쪽) */
+    /* 2열 레이아웃: 화면 반씩 — 왼쪽 사진 + 오른쪽 내용/스크롤 */
     .two-col {
       display: grid;
-      grid-template-columns: minmax(280px, 42vw) 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 12px;
       align-items: start;
-      min-height: 100%;
+      padding: 12px 0;
     }
     .photo-panel {
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 8px;
+      padding: 6px;
       background: #fff;
-      min-height: 260px;
+      min-height: 120px;
       overflow: hidden;
       position: relative;
       width: 100%;
@@ -210,25 +210,22 @@
       object-fit: contain;
       transform: none;
       display: block;
-      /* 사진 비율 유지하며 가능한 크게: 부모 너비 100% + 높이 자동 */
     }
     .photo-panel .photo-cap {
       font-size: 13px;
       color: #555;
-      margin: 10px 0 0;
+      margin: 8px 0 0;
     }
     .choice-panel {
       min-width: 0;
       overflow-y: auto;
       padding-bottom: 10px;
-      overflow-x: hidden;
-      /* 오른쪽 패널이 그리드에서 충분히 높이 확보되도록 */
       min-height: 200px;
     }
     #confirm-area .choice-panel {
       display: flex;
       flex-direction: column;
-      max-height: 70vh;
+      max-height: 80vh;
       overflow-y: auto;
     }
     #confirm-area .actions {
@@ -237,7 +234,7 @@
     #result-area .choice-panel {
       display: flex;
       flex-direction: column;
-      max-height: 70vh;
+      max-height: 80vh;
       overflow-y: auto;
     }
     #result-area .actions {
@@ -245,7 +242,7 @@
     }
     @media (max-width: 560px) {
       .two-col { grid-template-columns: 1fr; }
-      .photo-panel { max-width: 340px; }
+      .photo-panel { max-width: 100%; }
       .choice-panel { max-height: none; overflow-y: visible; }
       #confirm-area .choice-panel,
       #result-area .choice-panel {
