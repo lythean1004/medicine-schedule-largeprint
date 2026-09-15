@@ -491,7 +491,7 @@
           parseStatus.textContent = "글자 읽기 완료";
           toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
         } catch (e) {
-          showParseError(data || {}, {
+          showParseError(null, {
             errorMessage: "네트워크 오류가 났어요: " + (e && e.message ? e.message : String(e))
           });
           toastShow("다시 시도해 주세요");
@@ -531,7 +531,7 @@
           parseStatus.textContent = "글자 읽기 완료";
           toastShow("초안이 읽혔어요. 보호자가 확인해 주세요");
         } catch (e) {
-          showParseError(data || {}, {
+          showParseError(null, {
             errorMessage: "네트워크 오류가 났어요: " + (e && e.message ? e.message : String(e))
           });
           toastShow("다시 시도해 주세요");
