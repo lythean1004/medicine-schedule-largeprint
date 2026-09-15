@@ -3,7 +3,9 @@
 약봉투 사진 한 장만 올리면, 아침·점심·저녁·자기 전 복약 정보를 큰 글씨 시간표로 정리해 주는 서비스입니다.  
 회원가입·앱 설치 없이 바로 볼 수 있습니다.
 
-![약 먹는 시간표](./.github/assets/preview.png)
+![메인 화면](./Mainpage.png)
+
+> 캡처: 메인페이지 화면
 
 ## 바로 써 보기
 
@@ -38,6 +40,10 @@
   - Gmail PNG 첨부 발송(Gmail 연결 시)
   - PNG 다운로드
 
+## 데모 영상
+
+- YouTube: [약 먹는 시간표 데모](https://youtu.be/bWgdfIlSjtw)
+
 ## 동작 방식 요약
 
 서비스는 아래 순서로 동작합니다.
@@ -66,6 +72,11 @@ open medicine-schedule-largeprint/index.html
 - **PDF 생성**: `jsPDF`
 - **OCR 처리**: 서버 `/api/parse`에서 Upstage 문서 디지털화 API 사용
 - **공유 링크/ICS**: 서버 `/api/share`, `/api/ics`
+
+## 저장소 공개 상태
+
+- 저장소는 Public으로 공개되어 있습니다.
+- 접근 URL: [https://github.com/lythean1004/medicine-schedule-largeprint](https://github.com/lythean1004/medicine-schedule-largeprint)
 
 ## 환경변수
 
