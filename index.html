@@ -651,7 +651,7 @@
 
       function markMissing() {
         confirmList.querySelectorAll(".confirm-item").forEach((item) => {
-          const bottomCheckbox = item.querySelector('#ck-bottom-" + escapedId(item.dataset.name) + "');
+          const bottomCheckbox = item.querySelector('#ck-bottom-' + escapedId(item.dataset.name));
           const bottomChecked = bottomCheckbox ? bottomCheckbox.checked : false;
           const textInputs = item.querySelectorAll('input[type="text"]');
           const anyBlank = Array.from(textInputs).some((t) => !t.value.trim());
@@ -672,7 +672,7 @@
         let anyChecked = false;
         items.forEach((item) => {
           const name = item.dataset.name || "(이름 없음)";
-          const bottomCheckbox = item.querySelector('#ck-bottom-" + escapedId(name) + "');
+          const bottomCheckbox = item.querySelector('#ck-bottom-' + escapedId(name));
           const checked = bottomCheckbox ? bottomCheckbox.checked : false;
           anyChecked = anyChecked || checked;
 
