@@ -440,6 +440,401 @@
     }
     .toast.show { opacity: 1; }
 
+    /* 사진 확대 모달 */
+    #photo-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+    }
+    #photo-modal .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 92vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    #photo-modal .modal-close {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--line);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    #photo-modal .modal-close:hover {
+      background: var(--soft);
+    }
+    #photo-modal #modal-photo-img {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+      border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    #photo-modal .modal-cap {
+      font-size: 16px;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+
+    /* confirm-area 사진 패널 */
+    #confirm-area .photo-panel {
+      cursor: pointer;
+      position: relative;
+    }
+    #confirm-area .photo-panel .photo-zoom-hint {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 13px;
+      color: #fff;
+      background: rgba(22, 22, 22, 0.7);
+      padding: 4px 8px;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    #confirm-area .photo-panel img {
+      transition: transform 0.15s;
+    }
+    #confirm-area .photo-panel:hover img {
+      transform: scale(1.03);
+    }
+
+    /* 진행 표시 바 */
+    .progress-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .progress-bar .progress-count {
+      color: var(--blue);
+      font-weight: 700;
+    }
+    .progress-bar .progress-sep {
+      color: var(--ink-soft);
+    }
+
+    /* confirm-item 개선 */
+    .confirm-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 12px;
+      background: var(--bg-card);
+    }
+    .confirm-item .item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .confirm-item .item-number {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue);
+      background: #eaf2fb;
+      border: 1px solid var(--blue);
+      border-radius: 20px;
+      padding: 3px 12px;
+      white-space: nowrap;
+    }
+    .confirm-item .confirm-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .confirm-item .ck {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    .confirm-item .ck input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      accent-color: var(--blue);
+    }
+    .confirm-item .ck label {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .confirm-item .ck label:has(input:checked) {
+      background: #eaf2fb;
+      color: var(--blue);
+    }
+
+    /* 시간대 체크박스 - 라벨 클릭 가능, 간격 넉넉히 */
+    .time-group {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .time-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      min-height: 44px;
+    }
+    .time-row:hover {
+      background: var(--soft);
+    }
+    .time-row:has(input:checked) {
+      background: #eaf2fb;
+      border-color: var(--blue);
+    }
+    .time-row input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--blue);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .time-row .time-label {
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--ink);
+      flex: 1;
+    }
+    .time-row:has(input:checked) .time-label {
+      color: var(--blue);
+    }
+
+    /* 입력칸 - 폭 제각각 */
+    .confirm-item .fields {
+      margin-top: 10px;
+      font-size: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .field-row .field-label {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      min-width: 60px;
+    }
+    .field-row input[type="text"] {
+      font-size: 18px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+    }
+    .field-row input[data-field="dose"] { width: 80px; }
+    .field-row input[data-field="when"] { width: 180px; }
+    .field-row input[data-field="days"] { width: 110px; }
+    .field-row input[data-field="note"] { width: 240px; flex: 1; }
+
+    /* 미확인 배지 */
+    .unconfirmed-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--red);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 6px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .field-row.has-value .unconfirmed-badge {
+      display: none;
+    }
+
+    /* 안내 문구 */
+    .confirm-intro {
+      font-size: 20px;
+      line-height: 1.55;
+      margin: 0 0 4px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .confirm-intro .confirm-note {
+      font-size: 18px;
+      color: var(--ink-soft);
+      font-weight: 400;
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* 결과 카드 분리 */
+    .result-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .result-card-block {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      background: var(--bg-card);
+      overflow-x: auto;
+    }
+    .result-card-block h2 {
+      font-size: 26px;
+      margin: 0 0 14px;
+      color: var(--ink);
+    }
+    .result-card-block .card-slot {
+      margin-top: 14px;
+      page-break-inside: avoid;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .result-card-block .card-slot h3 {
+      font-size: 22px;
+      margin: 0 0 8px;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 4px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .result-card-block .med-row {
+      font-size: 20px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: baseline;
+    }
+    .result-card-block .med-row .name {
+      flex: 1 1 100%;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .result-card-block .med-row .meta {
+      color: #333;
+    }
+    .result-card-block .empty {
+      color: #777;
+      font-size: 18px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    /* 저장 옵션 */
+    .save-options {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .save-options .save-label {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 8px;
+      display: block;
+    }
+    .save-options .save-radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .save-options .save-radio {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 17px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .save-options .save-radio:hover {
+      background: var(--soft);
+    }
+    .save-options .save-radio input[type="radio"] {
+      accent-color: var(--blue);
+    }
+    .save-options .save-radio:has(input:checked) {
+      background: #eaf2fb;
+      border-color: var(--blue);
+    }
+    .save-actions {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .save-actions button {
+      font-size: 17px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      transition: background 0.15s;
+    }
+    .save-actions button:hover {
+      background: var(--soft);
+    }
+    .save-actions button.primary-save {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+    .save-actions button.primary-save:hover {
+      background: var(--blue-dark);
+    }
+
     /* 2열 레이아웃 */
     .two-col {
       display: grid;
@@ -535,7 +930,7 @@
       <div class="file-select-area">
         <label class="file-btn" for="file-input">
           <span class="cam-icon">📷</span>
-          <span>사진 고르기</span>
+          <span>사진찍기/사진고르기</span>
         </label>
         <input type="file" id="file-input" accept="image/*" class="file-input-hidden" />
         <div class="file-name-display" id="file-name-display">
@@ -581,12 +976,20 @@
       <div class="two-col">
         <div class="photo-panel">
           <img id="confirm-photo" src="" alt="약봉투 사진" />
+          <span class="photo-zoom-hint">↑ 클릭하면 크게 보기</span>
           <p class="photo-cap">올린 사진</p>
         </div>
         <div class="choice-panel">
-          <p>약 이름 초안이 읽혔어요. 보호자가 직접 확인해 주세요.</p>
-          <p class="note">
-            입력하지 않은 칸은 붉은 칸으로 표시돼요.<br />
+          <div class="progress-bar" id="progress-bar">
+            <span>약 <span class="progress-count" id="progress-total">0</span>개 중
+              <span class="progress-count" id="progress-done">0</span>개 확인</span>
+            <span class="progress-sep">|</span>
+            <span style="font-weight:400;color:var(--ink-soft);font-size:16px;">아래에서 하나씩 확인해 주세요</span>
+          </div>
+
+          <p class="confirm-intro">약 이름 초안이 읽혔어요. 보호자가 직접 확인해 주세요.</p>
+          <p class="confirm-intro confirm-note">
+            입력하지 않은 칸 옆에는 <strong>미확인</strong> 표시가 붙어요.<br />
             보호자가 확인 체크를 누르면, 자동 읽은 초안을 덮어쓰고 보호자가 확정한 값만 반영해요.
           </p>
 
@@ -610,21 +1013,35 @@
           <p class="photo-cap">올린 사진</p>
         </div>
         <div class="choice-panel">
-          <div class="card" id="result-card"></div>
-          <div class="actions">
-            <div style="margin-bottom:10px;">
-              <label style="font-size:14px; color:#555; display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
-              <input id="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:14px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; width:220px;" />
+          <div id="result-cards" class="result-cards"></div>
+
+          <div class="save-options">
+            <span class="save-label">저장할 내용 선택</span>
+            <div class="save-radio-group">
+              <label class="save-radio"><input type="radio" name="save-scope" value="all" checked /> 전체 카드</label>
+              <label class="save-radio"><input type="radio" name="save-scope" value="morning" /> 아침 카드</label>
+              <label class="save-radio"><input type="radio" name="save-scope" value="lunch" /> 점심 카드</label>
+              <label class="save-radio"><input type="radio" name="save-scope" value="dinner" /> 저녁 카드</label>
+              <label class="save-radio"><input type="radio" name="save-scope" value="bedtime" /> 자기 전 카드</label>
+              <label class="save-radio"><input type="radio" name="save-scope" value="other" /> 확인 메모 카드</label>
             </div>
-            <button id="btn-save-png" type="button">카드 PNG 저장</button>
-            <button id="btn-save-pdf" type="button">PDF 저장</button>
+          </div>
+
+          <div class="save-actions">
+            <button id="btn-save-png" type="button" class="primary-save">PNG 저장</button>
+            <button id="btn-save-pdf" type="button" class="primary-save">PDF 저장</button>
             <button id="btn-copy-html" type="button">카드 화면 복사</button>
             <button id="btn-share" type="button" class="primary">공유하기</button>
             <button id="btn-ics" type="button">달력 ICS 저장</button>
           </div>
+
+          <div style="margin-top:10px;">
+            <label style="font-size:16px; color:var(--ink-soft); display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
+            <input id="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:16px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; width:240px;" />
+          </div>
+
           <div id="result-meta" class="result-meta"></div>
           <div id="share-host" class="card-share hidden"></div>
-          <!-- 공유 선택지 패널 -->
           <div id="share-options" class="share-options hidden">
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <button type="button" class="share-opt" data-opt="mailto">
@@ -640,11 +1057,10 @@
                 <span class="opt-icon">🖼️</span> PNG 다운로드
               </button>
             </div>
-            <div style="margin-top:8px; font-size:12px; color:#777;">
+            <div style="margin-top:8px; font-size:13px; color:var(--ink-soft);">
               카카오톡은 별도 파일 전송이 어려워, PNG 다운로드 후 카톡에서 공유하거나 공유 링크 복사로 보내세요.
             </div>
           </div>
-        </div>
         </div>
       </div>
     </section>
@@ -668,6 +1084,16 @@
   </div>
 
   <div id="toast" class="toast"></div>
+
+  <!-- 사진 확대 모달 -->
+  <div id="photo-modal" class="hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <button class="modal-close" type="button">✕ 닫기</button>
+      <img id="modal-photo-img" src="" alt="약봉투 사진 확대" />
+      <p class="modal-cap">사진을 다시 누르면 닫혀요</p>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -985,32 +1411,39 @@
       function buildConfirmView() {
         confirmList.innerHTML = "";
         const list = medDraft.length ? medDraft : [];
+        const total = list.length;
         if (!list.length) {
           confirmList.innerHTML =
             '<div class="confirm-item missing"><div class="label-missing">약 이름 초안이 안 보여요.</div>' +
             '아래에서 보호자가 직접 약 이름을 적어 주세요.</div>';
+          updateProgress(0, 0);
+          return;
         }
-        list.forEach((m) => {
+        list.forEach((m, idx) => {
           const item = document.createElement("div");
           item.className = "confirm-item";
           item.dataset.name = m.name;
+          item.dataset.index = String(idx);
+
+          // 약 번호 배지 + 약 이름 머리
+          const head = document.createElement("div");
+          head.className = "item-head";
+          const numBadge = document.createElement("span");
+          numBadge.className = "item-number";
+          numBadge.textContent = (idx + 1) + " / " + total;
+          head.appendChild(numBadge);
+          const nameLabel = document.createElement("span");
+          nameLabel.className = "confirm-name";
+          nameLabel.textContent = m.name || "(약 이름 없음)";
+          head.appendChild(nameLabel);
+          item.appendChild(head);
 
           const body = document.createElement("div");
           body.className = "fields";
 
-          // 약 이름 (큰 글씨, 상단 표시)
-          const nameRow = document.createElement("div");
-          nameRow.style.marginBottom = "10px";
-          const nameLabel = document.createElement("span");
-          nameLabel.className = "confirm-name";
-          nameLabel.textContent = m.name || "(약 이름 없음)";
-          nameRow.appendChild(nameLabel);
-          body.appendChild(nameRow);
-
           // 시간대 체크 (아침/점심/저녁/자기 전)
           const timeGroup = document.createElement("div");
           timeGroup.className = "time-group";
-          timeGroup.style.marginTop = "6px";
           const slots = ["아침", "점심", "저녁", "자기 전"];
           slots.forEach((s) => {
             const row = document.createElement("label");
@@ -1019,81 +1452,65 @@
             cb2.type = "checkbox";
             cb2.value = s;
             cb2.name = "time-" + escapedId(m.name);
-            const txt = document.createTextNode(" " + s);
+            cb2.dataset.field = "time-" + s;
+            const txt = document.createElement("span");
+            txt.className = "time-label";
+            txt.textContent = s;
             row.appendChild(cb2);
             row.appendChild(txt);
             timeGroup.appendChild(row);
           });
           body.appendChild(timeGroup);
 
-          const row = document.createElement("div");
-          row.style.marginTop = "8px";
-          row.innerHTML =
-            '<div><span class="missing-text">몇 알</span> ';
-          const doseInput = document.createElement("input");
-          doseInput.type = "text";
-          doseInput.placeholder = "예: 1";
-          doseInput.dataset.field = "dose";
-          row.appendChild(doseInput);
-          row.innerHTML += '</div>';
+          // 입력칸
+          const fields = [
+            { field: "dose", label: "몇 알", placeholder: "예: 1", width: "80px" },
+            { field: "when", label: "언제", placeholder: "예: 식후 30분", width: "180px" },
+            { field: "days", label: "며칠분", placeholder: "예: 30일분", width: "110px" },
+            { field: "note", label: "비고(확인 메모)", placeholder: "예: 약사님께 확인", width: "240px" }
+          ];
+          fields.forEach((f) => {
+            const row = document.createElement("div");
+            row.className = "field-row";
+            row.dataset.field = f.field;
+            const lbl = document.createElement("span");
+            lbl.className = "field-label";
+            lbl.textContent = f.label;
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.placeholder = f.placeholder;
+            inp.dataset.field = f.field;
+            row.appendChild(lbl);
+            row.appendChild(inp);
+            // 미확인 배지 (초기: 빈 칸이면 표시)
+            const badge = document.createElement("span");
+            badge.className = "unconfirmed-badge";
+            badge.textContent = "미확인";
+            row.appendChild(badge);
+            body.appendChild(row);
+          });
 
-          const row2 = document.createElement("div");
-          row2.style.marginTop = "6px";
-          row2.innerHTML = '<div><span class="missing-text">언제</span> ';
-          const whenInput = document.createElement("input");
-          whenInput.type = "text";
-          whenInput.placeholder = "예: 식후 30분";
-          whenInput.dataset.field = "when";
-          row2.appendChild(whenInput);
-          row2.innerHTML += '</div>';
+          item.appendChild(body);
 
-          const row3 = document.createElement("div");
-          row3.style.marginTop = "6px";
-          row3.innerHTML = '<div><span class="missing-text">며칠분</span> ';
-          const daysInput = document.createElement("input");
-          daysInput.type = "text";
-          daysInput.placeholder = "예: 30일분";
-          daysInput.dataset.field = "days";
-          row3.appendChild(daysInput);
-          row3.innerHTML += '</div>';
-
-          const row4 = document.createElement("div");
-          row4.style.marginTop = "6px";
-          row4.innerHTML =
-            '<div><span class="missing-text">비고(확인 메모)</span> ';
-          const noteInput = document.createElement("input");
-          noteInput.type = "text";
-          noteInput.placeholder = "예: 약사님께 확인";
-          noteInput.dataset.field = "note";
-          row4.appendChild(noteInput);
-          row4.innerHTML += '</div>';
-
-          body.appendChild(row);
-          body.appendChild(row2);
-          body.appendChild(row3);
-          body.appendChild(row4);
-
-          // 확인 완료 체크박스 (약별 하단 배치)
+          // 확인 완료 체크박스
           const ck = document.createElement("div");
           ck.className = "ck";
-          ck.style.marginTop = "12px";
-          ck.style.paddingTop = "10px";
-          ck.style.borderTop = "1px solid var(--line)";
           const cb = document.createElement("input");
           cb.type = "checkbox";
           cb.id = "ck-" + escapedId(m.name);
+          cb.dataset.field = "confirmed";
           const lbl = document.createElement("label");
           lbl.htmlFor = cb.id;
           lbl.textContent = "보호자 확인 완료";
           ck.appendChild(cb);
           ck.appendChild(lbl);
-
-          item.appendChild(body);
           item.appendChild(ck);
+
           confirmList.appendChild(item);
         });
 
         markMissing();
+        updateProgress(0, 0);
       }
 
       function escapedId(name) {
@@ -1101,18 +1518,62 @@
       }
 
       function markMissing() {
+        const total = confirmList.querySelectorAll(".confirm-item").length;
+        let checkedCount = 0;
         confirmList.querySelectorAll(".confirm-item").forEach((item) => {
           const checkboxes = item.querySelectorAll('input[type="checkbox"]');
           const textInputs = item.querySelectorAll('input[type="text"]');
-          const checked = Array.from(checkboxes).some((c) => c.checked);
-          const anyBlank = Array.from(textInputs).some((t) => !t.value.trim());
-          const hasAnyInput = checked || Array.from(textInputs).some((t) => t.value.trim());
+          const confirmedCb = item.querySelector('input[data-field="confirmed"]');
+          const timeChecked = Array.from(checkboxes).some((c) => c.checked && c.name && c.name.startsWith("time-"));
+          const confirmedChecked = confirmedCb ? confirmedCb.checked : false;
+          if (confirmedChecked) checkedCount++;
+          // 입력칸 미확인 배지 업데이트
+          textInputs.forEach((t) => {
+            const row = t.closest(".field-row");
+            if (row) {
+              const badge = row.querySelector(".unconfirmed-badge");
+              if (badge) {
+                if (t.value.trim()) {
+                  row.classList.add("has-value");
+                } else {
+                  row.classList.remove("has-value");
+                }
+              }
+            }
+          });
+          // 시간대 체크박스 미확인 배지 (체크 안 된 시간에 대해)
+          const timeRows = item.querySelectorAll(".time-row");
+          timeRows.forEach((row) => {
+            const cb = row.querySelector("input[type=\"checkbox\"]");
+            if (cb && !cb.checked) {
+              // 체크 안 된 시간대 — 미확인 배지 추가
+              if (!row.querySelector(".unconfirmed-badge")) {
+                const badge = document.createElement("span");
+                badge.className = "unconfirmed-badge";
+                badge.textContent = "미확인";
+                row.appendChild(badge);
+              }
+            } else {
+              const badge = row.querySelector(".unconfirmed-badge");
+              if (badge) badge.remove();
+            }
+          });
+          // 전체 missing 표시 (확인도 안 되었고 입력도 없으면)
+          const hasAnyInput = confirmedChecked || timeChecked || Array.from(textInputs).some((t) => t.value.trim());
           if (!hasAnyInput) {
             item.classList.add("missing");
           } else {
             item.classList.remove("missing");
           }
         });
+        updateProgress(checkedCount, total);
+      }
+
+      function updateProgress(done, total) {
+        const doneEl = document.getElementById("progress-done");
+        const totalEl = document.getElementById("progress-total");
+        if (doneEl) doneEl.textContent = String(done);
+        if (totalEl) totalEl.textContent = String(total);
       }
 
       confirmList.addEventListener("change", markMissing);
@@ -1190,30 +1651,40 @@
         });
 
         let html = "";
-        html +=
-          '<div class="card"><h2>오늘 먹을 약 (큰 글씨)</h2>';
-        html += slotBlock("아침", slots["아침"]);
-        html += slotBlock("점심", slots["점심"]);
-        html += slotBlock("저녁", slots["저녁"]);
-        html += slotBlock("자기 전", slots["자기 전"]);
-
-        html +=
-          '<div class="slot"><h3>확인 메모 / 약사님께 확인할 것</h3>';
-        others.forEach((o) => {
-          html +=
-            '<div class="med-row"><span class="name">' +
-            escapeHtml(o.name) +
-            '</span><span class="meta">' +
-            (o.dose ? escapeHtml(o.dose) + " / " : "") +
-            (o.when ? escapeHtml(o.when) : "") +
-            (o.note ? " / " + escapeHtml(o.note) : "") +
-            '</span></div>';
-        });
-        if (!others.length) html += '<div class="empty">없음</div>';
+        html += '<div class="result-card-block"><h2>아침 카드</h2>';
+        html += cardSlotBlock("아침", slots["아침"]);
         html += "</div>";
 
-        html +=
-          '<div class="slot"><h3>며칠분</h3>';
+        html += '<div class="result-card-block"><h2>점심 카드</h2>';
+        html += cardSlotBlock("점심", slots["점심"]);
+        html += "</div>";
+
+        html += '<div class="result-card-block"><h2>저녁 카드</h2>';
+        html += cardSlotBlock("저녁", slots["저녁"]);
+        html += "</div>";
+
+        html += '<div class="result-card-block"><h2>자기 전 카드</h2>';
+        html += cardSlotBlock("자기 전", slots["자기 전"]);
+        html += "</div>";
+
+        html += '<div class="result-card-block"><h2>확인 메모 / 약사님께 확인할 것</h2>';
+        if (others.length) {
+          others.forEach((o) => {
+            html +=
+              '<div class="med-row"><span class="name">' +
+              escapeHtml(o.name) +
+              '</span><span class="meta">' +
+              (o.dose ? escapeHtml(o.dose) + " / " : "") +
+              (o.when ? escapeHtml(o.when) : "") +
+              (o.note ? " / " + escapeHtml(o.note) : "") +
+              '</span></div>';
+          });
+        } else {
+          html += '<div class="empty">없음</div>';
+        }
+        html += "</div>";
+
+        html += '<div class="result-card-block"><h2>며칠분</h2>';
         const daysSet = new Set();
         confirmed.forEach((r) => {
           if (r.days) daysSet.add(r.name + " / " + r.days);
@@ -1230,19 +1701,18 @@
         }
         html += "</div>";
 
-        html += "</div>";
-        resultCard.innerHTML = html;
+        document.getElementById("result-cards").innerHTML = html;
 
         const total = confirmed.length;
         resultMeta.textContent =
           "보호자가 확인한 약 " + total + "개 반영 / 사진은 저장하지 않았어요";
       }
 
-      function slotBlock(title, items) {
+      function cardSlotBlock(title, items) {
         if (!items.length) {
-          return '<div class="slot"><h3>' + title + '</h3><div class="empty">없음</div></div>';
+          return '<div class="card-slot"><h3>' + title + '</h3><div class="empty">없음</div></div>';
         }
-        let html = '<div class="slot"><h3>' + title + '</h3>';
+        let html = '<div class="card-slot"><h3>' + title + '</h3>';
         items.forEach((r) => {
           html +=
             '<div class="med-row"><span class="name">' +
@@ -1269,6 +1739,77 @@
       // -------------------------------------------------------------
       // 저장/공유
       // -------------------------------------------------------------
+      // 저장 범위 가져오기
+      function getSaveScope() {
+        const radio = document.querySelector('input[name="save-scope"]:checked');
+        return radio ? radio.value : "all";
+      }
+
+      // 저장 범위에 맞는 HTML 렌더링 (임시 컨테이너 사용)
+      function renderScopedCards(scope) {
+        const slots = { 아침: [], 점심: [], 저녁: [], "자기 전": [] };
+        const others = [];
+        confirmed.forEach((r) => {
+          const times = r.timeslots || [];
+          if (!times.length) {
+            if (r.note) others.push({ name: r.name, note: r.note, dose: r.dose, when: r.when, days: r.days });
+            return;
+          }
+          times.forEach((t) => { if (slots[t]) slots[t].push(r); });
+        });
+
+        const tmp = document.createElement("div");
+        const map = {
+          all: ["아침", "점심", "저녁", "자기 전"],
+          morning: ["아침"],
+          lunch: ["점심"],
+          dinner: ["저녁"],
+          bedtime: ["자기 전"],
+          other: ["메모"]
+        };
+        const targets = map[scope] || map.all;
+
+        targets.forEach((t) => {
+          if (t === "메모") {
+            const block = document.createElement("div");
+            block.className = "result-card-block";
+            let h = '<h2>확인 메모 / 약사님께 확인할 것</h2>';
+            if (others.length) {
+              others.forEach((o) => {
+                h += '<div class="med-row"><span class="name">' + escapeHtml(o.name) + '</span><span class="meta">' +
+                  (o.dose ? escapeHtml(o.dose) + " / " : "") +
+                  (o.when ? escapeHtml(o.when) : "") +
+                  (o.note ? " / " + escapeHtml(o.note) : "") +
+                  '</span></div>';
+              });
+            } else {
+              h += '<div class="empty">없음</div>';
+            }
+            block.innerHTML = h;
+            tmp.appendChild(block);
+          } else {
+            const items = slots[t] || [];
+            const block = document.createElement("div");
+            block.className = "result-card-block";
+            let h = '<h2>' + t + ' 카드</h2>';
+            if (items.length) {
+              items.forEach((r) => {
+                h += '<div class="med-row"><span class="name">' + escapeHtml(r.name) + '</span>';
+                const meta = [];
+                if (r.dose) meta.push(escapeHtml(r.dose) + "알");
+                if (r.when) meta.push(escapeHtml(r.when));
+                h += '<span class="meta">' + meta.join(" / ") + '</span></div>';
+              });
+            } else {
+              h += '<div class="card-slot"><h3>' + t + '</h3><div class="empty">없음</div></div>';
+            }
+            block.innerHTML = h;
+            tmp.appendChild(block);
+          }
+        });
+        return tmp;
+      }
+
       btnSavePng.addEventListener("click", async () => {
         try {
           if (!confirmed.length) {
@@ -1279,19 +1820,17 @@
             toastShow("이미지 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
             return;
           }
-          const cardEl = document.querySelector("#result-card");
-          if (!cardEl) {
-            toastShow("카드 화면이 없어요");
-            return;
-          }
-          const canvas = await html2canvas(cardEl, {
+          const scope = getSaveScope();
+          const container = renderScopedCards(scope);
+          const canvas = await html2canvas(container, {
             scale: 2,
             useCORS: true,
             backgroundColor: "#ffffff",
-            windowWidth: cardEl.scrollWidth,
-            windowHeight: cardEl.scrollHeight,
+            windowWidth: container.scrollWidth,
+            windowHeight: container.scrollHeight,
             logging: false
-          });          const blob = await new Promise((resolve) => {
+          });
+          const blob = await new Promise((resolve) => {
             canvas.toBlob((b) => resolve(b), "image/png");
           });
           if (!blob) {
@@ -1300,13 +1839,14 @@
           }
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
+          const scopeLabel = { all: "전체", morning: "아침", lunch: "점심", dinner: "저녁", bedtime: "자기전", other: "메모" }[scope] || "카드";
           a.href = url;
-          a.download = "약먹는시간표_카드.png";
+          a.download = "약먹는시간표_" + scopeLabel + ".png";
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 100);
-          toastShow("PNG 카드 저장 완료");
+          toastShow("PNG 저장 완료 (" + scopeLabel + " 카드)");
         } catch (e) {
           toastShow("PNG 저장 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
@@ -1322,44 +1862,132 @@
             toastShow("PDF 변환 라이브러리를 불러오고 있어요. 잠시 후 다시 시도해 주세요.");
             return;
           }
-          const cardEl = document.querySelector("#result-card");
-          if (!cardEl) {
-            toastShow("카드 화면이 없어요");
-            return;
+          const scope = getSaveScope();
+          if (scope === "all") {
+            const slots = { 아침: [], 점심: [], 저녁: [], "자기 전": [] };
+            const others = [];
+            confirmed.forEach((r) => {
+              const times = r.timeslots || [];
+              if (!times.length) {
+                if (r.note) others.push({ name: r.name, note: r.note, dose: r.dose, when: r.when, days: r.days });
+                return;
+              }
+              times.forEach((t) => { if (slots[t]) slots[t].push(r); });
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ unit: "mm", format: "a4" });
+            let pageIndex = 0;
+            const cardTitles = [
+              { key: "아침", label: "아침 카드" },
+              { key: "점심", label: "점심 카드" },
+              { key: "저녁", label: "저녁 카드" },
+              { key: "자기 전", label: "자기 전 카드" },
+              { key: "메모", label: "확인 메모 / 약사님께 확인할 것" }
+            ];
+
+            for (const ct of cardTitles) {
+              if (pageIndex > 0) pdf.addPage();
+              pageIndex++;
+              const items = ct.key === "메모" ? others : (slots[ct.key] || []);
+              let html = '<div class="result-card-block"><h2>' + ct.label + '</h2>';
+              if (ct.key === "메모") {
+                if (items.length) {
+                  items.forEach((o) => {
+                    html += '<div class="med-row"><span class="name">' + escapeHtml(o.name) + '</span><span class="meta">' +
+                      (o.dose ? escapeHtml(o.dose) + " / " : "") +
+                      (o.when ? escapeHtml(o.when) : "") +
+                      (o.note ? " / " + escapeHtml(o.note) : "") +
+                      '</span></div>';
+                  });
+                } else {
+                  html += '<div class="empty">없음</div>';
+                }
+              } else {
+                if (items.length) {
+                  items.forEach((r) => {
+                    html += '<div class="med-row"><span class="name">' + escapeHtml(r.name) + '</span>';
+                    const meta = [];
+                    if (r.dose) meta.push(escapeHtml(r.dose) + "알");
+                    if (r.when) meta.push(escapeHtml(r.when));
+                    html += '<span class="meta">' + meta.join(" / ") + '</span></div>';
+                  });
+                } else {
+                  html += '<div class="card-slot"><h3>' + ct.key + '</h3><div class="empty">없음</div></div>';
+                }
+              }
+              if (ct.key === "메모") {
+                html += '<div class="result-card-block" style="margin-top:14px;"><h2>며칠분</h2>';
+                const daysSet = new Set();
+                confirmed.forEach((r) => { if (r.days) daysSet.add(r.name + " / " + r.days); });
+                if (daysSet.size) {
+                  daysSet.forEach((d) => {
+                    html += '<div class="med-row"><span class="name">' + escapeHtml(d.split(" / ")[0]) + '</span><span class="meta">' + escapeHtml(d.split(" / ").slice(1).join(" / ")) + '</span></div>';
+                  });
+                } else {
+                  html += '<div class="empty">없음</div>';
+                }
+                html += "</div>";
+              }
+              html += "</div>";
+
+              const container = document.createElement("div");
+              container.innerHTML = html;
+              const canvas = await html2canvas(container, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                logging: false
+              });
+              const imgData = canvas.toDataURL("image/png");
+              const mmPerPx = 0.264583;
+              const width_mm = Math.ceil(canvas.width * mmPerPx);
+              const height_mm = Math.ceil(canvas.height * mmPerPx);
+              const pageW = 210;
+              const pageH = 297;
+              if (width_mm > pageW || height_mm > pageH) {
+                const scale = Math.min(pageW / width_mm, pageH / height_mm);
+                pdf.addImage(imgData, "PNG", (pageW - width_mm * scale) / 2, (pageH - height_mm * scale) / 2, width_mm * scale, height_mm * scale);
+              } else {
+                pdf.addImage(imgData, "PNG", 0, 0, width_mm, height_mm);
+              }
+            }
+            pdf.save("약먹는시간표_전체.pdf");
+            toastShow("PDF 저장 완료 (전체 카드, 페이지 분리)");
+          } else {
+            const container = renderScopedCards(scope);
+            const canvas = await html2canvas(container, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: "#ffffff",
+              windowWidth: container.scrollWidth,
+              windowHeight: container.scrollHeight,
+              logging: false
+            });
+            const imgData = canvas.toDataURL("image/png");
+            const { jsPDF } = window.jspdf;
+            const mmPerPx = 0.264583;
+            const width_mm = Math.ceil(canvas.width * mmPerPx);
+            const height_mm = Math.ceil(canvas.height * mmPerPx);
+            const pdf = new jsPDF({
+              orientation: width_mm > height_mm ? "landscape" : "portrait",
+              unit: "mm",
+              format: [width_mm, height_mm]
+            });
+            pdf.addImage(imgData, "PNG", 0, 0, width_mm, height_mm);
+            const scopeLabel = { morning: "아침", lunch: "점심", dinner: "저녁", bedtime: "자기전", other: "메모" }[scope] || "카드";
+            pdf.save("약먹는시간표_" + scopeLabel + ".pdf");
+            toastShow("PDF 저장 완료 (" + scopeLabel + " 카드)");
           }
-          const canvas = await html2canvas(cardEl, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-            windowWidth: cardEl.scrollWidth,
-            windowHeight: cardEl.scrollHeight,
-            logging: false
-          });
-          const imgData = canvas.toDataURL("image/png");
-          const { jsPDF } = window.jspdf;
-          // px -> mm 변환 (1px ≈ 0.264583mm)
-          const mmPerPx = 0.264583;
-          const width_mm = Math.ceil(canvas.width * mmPerPx);
-          const height_mm = Math.ceil(canvas.height * mmPerPx);
-          const pdf = new jsPDF({
-            orientation: width_mm > height_mm ? "landscape" : "portrait",
-            unit: "mm",
-            format: [width_mm, height_mm]
-          });
-          pdf.addImage(imgData, "PNG", 0, 0, width_mm, height_mm);
-          pdf.save("약먹는시간표_카드.pdf");
-          toastShow("PDF 저장 완료");
         } catch (e) {
           toastShow("PDF 저장 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
       });
 
-
       btnCopyHtml.addEventListener("click", () => {
-        const html = resultCard.innerHTML;
-        const cardEl = document.querySelector(".card");
-        if (!cardEl) return;
-        const full = cardEl.outerHTML;
+        const scope = getSaveScope();
+        const container = renderScopedCards(scope);
+        const full = container.outerHTML;
         navigator.clipboard
           .writeText(full)
           .then(() => toastShow("카드 HTML을 복사했어요"))
@@ -1645,6 +2273,50 @@
         } catch (e) {
           imgEl.src = "";
         }
+      }
+
+      // 사진 확대 모달
+      const photoModal = document.getElementById("photo-modal");
+      const modalImg = document.getElementById("modal-photo-img");
+      const confirmPhotoEl = document.getElementById("confirm-photo");
+      let modalSrc = null;
+
+      function openPhotoModal(blob) {
+        if (!photoModal || !modalImg) return;
+        modalSrc = blob;
+        readFileAsDataURL(blob).then((url) => {
+          modalImg.src = url;
+          photoModal.classList.remove("hidden");
+        });
+      }
+
+      function closePhotoModal() {
+        if (!photoModal) return;
+        photoModal.classList.add("hidden");
+        if (modalImg) modalImg.src = "";
+        modalSrc = null;
+      }
+
+      if (confirmPhotoEl && photoModal) {
+        confirmPhotoEl.addEventListener("click", () => {
+          const blob = rotatedBlob || fileBlob;
+          if (blob) openPhotoModal(blob);
+        });
+      }
+
+      if (photoModal) {
+        photoModal.addEventListener("click", (e) => {
+          if (e.target === photoModal || e.target.classList.contains("modal-overlay")) {
+            closePhotoModal();
+          }
+        });
+      }
+      const modalCloseBtn = document.querySelector(".modal-close");
+      if (modalCloseBtn) {
+        modalCloseBtn.addEventListener("click", closePhotoModal);
+      }
+      if (modalImg) {
+        modalImg.addEventListener("click", closePhotoModal);
       }
     })();
   </script>
