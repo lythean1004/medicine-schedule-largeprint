@@ -383,7 +383,7 @@
               카카오톡은 별도 파일 전송이 어려워, PNG 다운로드 후 카톡에서 공유하거나 공유 링크 복사로 보내세요.
             </div>
           </div>
-        </div
+        </div>
         </div>
       </div>
     </section>
@@ -1244,7 +1244,7 @@
         }).catch(() => toastShow("PNG 다운로드 중 오류가 났어요"));
       }
 
-      // 메일 앱 열기 (mailto:) — 별도 버튼 제거 후 선택지 전용
+      btnIcs.addEventListener("click", async () => {
         try {
           if (!confirmed.length) {
             toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
