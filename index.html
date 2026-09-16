@@ -1216,7 +1216,6 @@
       const btnSavePng = $("#btn-save-png");
       const btnSavePdf = $("#btn-save-pdf");
       const btnCopyHtml = $("#btn-copy-html");
-      const btnShareLink = $("#btn-share-link");
       const btnIcs = $("#btn-ics");
       const btnRetakeFromResult = $("#btn-retake-from-result");
       const toast = $("#toast");
@@ -2152,7 +2151,18 @@
           .catch(() => toastShow("복사에 실패했어요"));
       });
 
-      btnShareLink.addEventListener("click", async () => {
+      // 공유하기 버튼 + 선택지 패널
+      const btnShare = $("#btn-share");
+      const shareOptionsEl = $("#share-options");
+      const SHARE_SUBJECT = "약봉투 크게해서 보내드려요~";
+      const SHARE_BODY = "오늘 먹을 약 큰 글씨 카드예요. 첨부 파일을 확인해 주세요.";
+
+      btnShare.addEventListener("click", async () => {
+        if (!confirmed.length) {
+          toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
+          return;
+        }
+        // 공유 링크 만들기
         try {
           const res = await fetch("/api/share", {
             method: "POST",
@@ -2162,36 +2172,23 @@
           const data = await res.json();
           if (!res.ok) {
             toastShow("공유 링크 만들기 실패");
-            return;
-          }
-          const link = data.url || "";
-          if (link) {
-            shareHost.classList.remove("hidden");
-            shareHost.textContent = "공유 링크: " + link;
-            navigator.clipboard.writeText(link).then(
-              () => toastShow("공유 링크를 복사했어요"),
-              () => {}
-            );
           } else {
-            toastShow("공유 링크를 만들 수 없었어요");
+            const link = data.url || "";
+            if (link) {
+              shareHost.classList.remove("hidden");
+              shareHost.textContent = "공유 링크: " + link;
+              navigator.clipboard.writeText(link).then(
+                () => toastShow("공유 링크를 복사했어요"),
+                () => toastShow("공유 링크가 생성됐어요. 원하는 곳에 붙여넣어 주세요.")
+              );
+            } else {
+              toastShow("공유 링크를 만들 수 없었어요");
+            }
           }
         } catch (e) {
           toastShow("공유 링크 만들기 중 오류가 났어요");
         }
-      });
-
-      // 공유하기 버튼 + 선택지 패널
-      const btnShare = $("#btn-share");
-      const shareOptionsEl = $("#share-options");
-      const SHARE_SUBJECT = "약봉투 크게해서 보내드려요~";
-      const SHARE_BODY = "오늘 먹을 약 큰 글씨 카드예요. 첨부 파일을 확인해 주세요.";
-
-      btnShare.addEventListener("click", () => {
-        if (!confirmed.length) {
-          toastShow("확인된 약이 없어요. 먼저 보호자 확인을 완료해 주세요.");
-          return;
-        }
-        // 공유하기 버튼은 공유 선택지 패널을 먼저 열어 줍니다.
+        // 공유 선택지 패널 열기
         shareOptionsEl.classList.remove("hidden");
         toastShow("공유 방식을 선택해 주세요");
       });
