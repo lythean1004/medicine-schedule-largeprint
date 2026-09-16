@@ -1112,8 +1112,8 @@
           </div>
 
           <div style="margin-top:10px;">
-            <label style="font-size:16px; color:var(--ink-soft); display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
-            <input id="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:16px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; width:240px;" />
+            <label for="mail-recipient" style="font-size:16px; color:var(--ink-soft); display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
+            <input id="mail-recipient" name="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:16px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; width:240px;" />
           </div>
 
           <div id="result-meta" class="result-meta"></div>
@@ -1216,7 +1216,7 @@
       const btnSavePng = $("#btn-save-png");
       const btnSavePdf = $("#btn-save-pdf");
       const btnCopyHtml = $("#btn-copy-html");
-      const btnShareLink = $("#btn-share-link");
+      const btnShareLink = document.getElementById("btn-share-link") || null;
       const btnIcs = $("#btn-ics");
       const btnRetakeFromResult = $("#btn-retake-from-result");
       const toast = $("#toast");
@@ -2524,7 +2524,7 @@
 
       if (photoModal) {
         photoModal.addEventListener("click", (e) => {
-          if (e.target === photoModal || e.target.classList.contains("modal-overlay")) {
+          if (e.target === photoModal || (e.target && e.target.classList && e.target.classList.contains("modal-overlay"))) {
             closePhotoModal();
           }
         });
