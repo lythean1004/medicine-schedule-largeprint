@@ -2152,32 +2152,34 @@
           .catch(() => toastShow("복사에 실패했어요"));
       });
 
-      btnShareLink.addEventListener("click", async () => {
-        try {
-          const res = await fetch("/api/share", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ confirmed: confirmed })
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            toastShow("공유 링크 만들기 실패");
-            return;
+      if (btnShareLink) {
+        btnShareLink.addEventListener("click", async () => {
+          try {
+            const res = await fetch("/api/share", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ confirmed: confirmed })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              toastShow("공유 링크 만들기 실패");
+              return;
+            }
+            const link = data.url || "";
+            if (link) {
+              shareHost.classList.remove("hidden");
+              shareHost.textContent = "공유 링크: " + link;
+              navigator.clipboard.writeText(link).then(
+                () => toastShow("공유 링크를 복사했어요"),
+                () => {}
+              );
+            } else {
+              toastShow("공유 링크를 만들 수 없었어요");
+            }
+          } catch (e) {
+            toastShow("공유 링크 만들기 중 오류가 났어요");
           }
-          const link = data.url || "";
-          if (link) {
-            shareHost.classList.remove("hidden");
-            shareHost.textContent = "공유 링크: " + link;
-            navigator.clipboard.writeText(link).then(
-              () => toastShow("공유 링크를 복사했어요"),
-              () => {}
-            );
-          } else {
-            toastShow("공유 링크를 만들 수 없었어요");
-          }
-        } catch (e) {
-          toastShow("공유 링크 만들기 중 오류가 났어요");
-        }
+        });
       });
 
       // 공유하기 버튼 + 선택지 패널
