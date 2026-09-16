@@ -2178,7 +2178,10 @@
               shareHost.classList.remove("hidden");
               shareHost.textContent = "공유 링크: " + link;
               navigator.clipboard.writeText(link).then(
-                () => toastShow("공유 링크를 복사했어요"),
+                () => {
+                  toastShow("공유 링크를 복사했어요");
+                  toastShow("이 링크는 약 시간표 공유용이에요. 약 정보가 포함될 수 있으니 필요한 분만 공유해 주세요.");
+                },
                 () => toastShow("공유 링크가 생성됐어요. 원하는 곳에 붙여넣어 주세요.")
               );
             } else {
