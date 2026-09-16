@@ -1112,8 +1112,8 @@
           </div>
 
           <div style="margin-top:10px;">
-            <label for="mail-recipient" style="font-size:16px; color:var(--ink-soft); display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
-            <input id="mail-recipient" name="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:16px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; width:240px;" />
+            <label style="font-size:16px; color:var(--ink-soft); display:block; margin-bottom:4px;">메일 받을 사람 (이메일)</label>
+            <input id="mail-recipient" type="email" placeholder="예: friend@example.com" style="font-size:16px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; width:240px;" />
           </div>
 
           <div id="result-meta" class="result-meta"></div>
@@ -1216,7 +1216,7 @@
       const btnSavePng = $("#btn-save-png");
       const btnSavePdf = $("#btn-save-pdf");
       const btnCopyHtml = $("#btn-copy-html");
-      const btnShareLink = document.getElementById("btn-share-link") || null;
+      const btnShareLink = $("#btn-share-link");
       const btnIcs = $("#btn-ics");
       const btnRetakeFromResult = $("#btn-retake-from-result");
       const toast = $("#toast");
@@ -1642,7 +1642,7 @@
           timeRows.forEach((row) => {
             const cb = row.querySelector("input[type=\"checkbox\"]");
             if (cb && !cb.checked) {
-              // 체크 안 된 시간대 - 미확인 배지 추가
+              // 체크 안 된 시간대 — 미확인 배지 추가
               if (!row.querySelector(".unconfirmed-badge")) {
                 const badge = document.createElement("span");
                 badge.className = "unconfirmed-badge";
@@ -2152,34 +2152,32 @@
           .catch(() => toastShow("복사에 실패했어요"));
       });
 
-      if (btnShareLink) {
-        btnShareLink.addEventListener("click", async () => {
-          try {
-            const res = await fetch("/api/share", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ confirmed: confirmed })
-            });
-            const data = await res.json();
-            if (!res.ok) {
-              toastShow("공유 링크 만들기 실패");
-              return;
-            }
-            const link = data.url || "";
-            if (link) {
-              shareHost.classList.remove("hidden");
-              shareHost.textContent = "공유 링크: " + link;
-              navigator.clipboard.writeText(link).then(
-                () => toastShow("공유 링크를 복사했어요"),
-                () => {}
-              );
-            } else {
-              toastShow("공유 링크를 만들 수 없었어요");
-            }
-          } catch (e) {
-            toastShow("공유 링크 만들기 중 오류가 났어요");
+      btnShareLink.addEventListener("click", async () => {
+        try {
+          const res = await fetch("/api/share", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ confirmed: confirmed })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            toastShow("공유 링크 만들기 실패");
+            return;
           }
-        });
+          const link = data.url || "";
+          if (link) {
+            shareHost.classList.remove("hidden");
+            shareHost.textContent = "공유 링크: " + link;
+            navigator.clipboard.writeText(link).then(
+              () => toastShow("공유 링크를 복사했어요"),
+              () => {}
+            );
+          } else {
+            toastShow("공유 링크를 만들 수 없었어요");
+          }
+        } catch (e) {
+          toastShow("공유 링크 만들기 중 오류가 났어요");
+        }
       });
 
       // 공유하기 버튼 + 선택지 패널
@@ -2428,7 +2426,7 @@
           a.click();
           document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 1500);
-          toastShow("ICS 파일 저장 완료 - 달력에서 열어 보세요");
+          toastShow("ICS 파일 저장 완료 — 달력에서 열어 보세요");
         } catch (e) {
           toastShow("ICS 저장 중 오류가 났어요: " + (e && e.message ? e.message : "알 수 없음"));
         }
@@ -2524,7 +2522,7 @@
 
       if (photoModal) {
         photoModal.addEventListener("click", (e) => {
-          if (e.target === photoModal || (e.target && e.target.classList && e.target.classList.contains("modal-overlay"))) {
+          if (e.target === photoModal || e.target.classList.contains("modal-overlay")) {
             closePhotoModal();
           }
         });
