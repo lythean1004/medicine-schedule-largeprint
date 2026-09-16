@@ -1,11 +1,24 @@
 # 약 먹는 시간표
 
-약봉투 사진 한 장만 올리면, 아침·점심·저녁·자기 전 복약 정보를 큰 글씨 시간표로 정리해 주는 서비스입니다.  
-회원가입·앱 설치 없이 바로 볼 수 있습니다.
+약봉투 사진 한 장만 올리면, 아침·점심·저녁·자기 전 복약 정보가 큰 글씨 시간표로 정리돼요.  
+회원가입·앱 설치 없이 바로 쓸 수 있어요.
 
 🌐 서비스 접속: https://medicine-schedule-largeprint.vercel.app/
 
 ![메인 화면](./.github/assets/preview.png)
+
+## 💬 빠르게 확인
+
+- **이 서비스가 해결하는 문제**  
+  작은 약봉투 글씨를 확인해야 하는 어르신과 보호자의 불편 — 사진 한 장이면 큰 글씨 시간표로 정리
+- **누구나 바로 쓸 수 있나요?**  
+  네. 로그인·설치 없이 URL로 바로 사용합니다.
+- **누가 만들었고, 어디서 볼 수 있나요?**  
+  기존 `medicine-schedule-largeprint` 스킬을 공개 웹 서비스로 확장해 만들었습니다.  
+  서비스 접속: https://medicine-schedule-largeprint.vercel.app/  
+  저장소: https://github.com/lythean1004/medicine-schedule-largeprint
+- **더 자세히 보려면?**  
+  아래 Overview와 동작 방식 요약을 참고하고, 저장소 이슈로 의견·개선 아이디어를 남길 수 있습니다.
 
 ## 🌟 Highlights
 
