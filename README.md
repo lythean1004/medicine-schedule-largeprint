@@ -54,7 +54,7 @@
 
 ### 누가 만들었나요?
 
-이 서비스는 기존 `medicine-schedule-largeprint` 스킬(약봉투 사진 → 큰 글씨 시간표)을 기반으로, 계정 없이 URL로 쓰는 공개 웹 서비스로 확장해 만들었습니다.  
+이 서비스는 기존 `medicine-schedule-largeprint` 스킬(약봉투 사진 → 큰 글씨 시간표)을 기반으로, Timely.AI 환경에서 계정 없이 URL로 쓰는 공개 웹 서비스로 확장해 만들었습니다.  
 저장소는 공개(Public) 상태이며, 서버 쪽에서는 Upstage OCR API를 사용하고, 프론트엔드 이미지 캡처·PDF 생성에는 `html2canvas`, `jsPDF`를 사용합니다.
 
 ## ✍️ 바로 써 보기
